@@ -1,0 +1,11 @@
+services:
+  frontend:
+    build: .
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./:/app
+    environment:
+      - NODE_ENV=development
+      - VITE_HOST=0.0.0.0
+    command: sh -c "npx tailwindcss -c tailwind.config.js -i ./src/index.css -o ./src/output.css --watch & npm run dev"
