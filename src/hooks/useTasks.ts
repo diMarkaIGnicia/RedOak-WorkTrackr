@@ -12,6 +12,8 @@ export interface Task {
   horas_trabajadas: number;
   descripcion: string;
   estado: string;
+  primerAdjuntoUrl?: string; // signed URL for the first image/video attachment
+  fecha_creacion?: string; // ISO string for creation date
 }
 
 export function useTasks(
@@ -52,8 +54,36 @@ export function useTasks(
     query = query.order('fecha_inicio', { ascending: false });
     query = query.range(from, to);
     const { data, error, count } = await query;
-    if (error) setError(error.message);
-    setTasks(data || []);
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+    // Para cada tarea, buscar el primer adjunto (foto/video) y generar URL firmada
+    const tareasConAdjunto = await Promise.all(
+      (data || []).map(async (tarea) => {
+        // Buscar el primer adjunto tipo foto o video
+        const { data: adjuntos, error: adjError } = await supabase
+          .from('tarea_adjuntos')
+          .select('archivo_path, tipo_archivo')
+          .eq('tarea_id', tarea.id)
+          .in('tipo_archivo', ['foto', 'video'])
+          .order('fecha_creacion', { ascending: true })
+          .limit(1);
+        if (!adjError && adjuntos && adjuntos.length > 0) {
+          let relativePath = adjuntos[0].archivo_path;
+          if (!relativePath.startsWith('adjuntos/')) {
+            relativePath = `adjuntos/${relativePath}`;
+          }
+          const { data: signed, error: signErr } = await supabase.storage.from('tareas').createSignedUrl(relativePath, 60 * 60);
+          if (!signErr && signed?.signedUrl) {
+            return { ...tarea, primerAdjuntoUrl: signed.signedUrl };
+          }
+        }
+        return { ...tarea };
+      })
+    );
+    setTasks(tareasConAdjunto);
     setTotalCount(count || 0);
     setLoading(false);
   }, [userId, filters, currentPage, currentPageSize]);

@@ -1,5 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ModuleTemplate from '../layouts/ModuleTemplate';
+
+// Componente para mostrar preview con loading/skeleton
+const PreviewWithLoading: React.FC<{ url?: string; cliente: string }> = ({ url, cliente }) => {
+  const [loading, setLoading] = useState(!!url);
+  const [isVideo, setIsVideo] = useState(false);
+
+  useEffect(() => {
+    if (!url) return;
+    setIsVideo(/\.(mp4|webm|ogg)(\?|$)/i.test(url));
+  }, [url]);
+
+  if (!url) {
+    return (
+      <div className="w-20 h-20 rounded overflow-hidden bg-gray-100 flex items-center justify-center">
+        <span className="text-gray-400 text-2xl">🖼️</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-20 h-20 rounded overflow-hidden bg-gray-100 flex items-center justify-center relative">
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-white/60 z-10">
+          <svg className="animate-spin h-8 w-8 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+        </div>
+      )}
+      {isVideo ? (
+        <video
+          src={url}
+          className="object-cover w-full h-full"
+          controls={false}
+          autoPlay={false}
+          muted
+          playsInline
+          onLoadedData={() => setLoading(false)}
+          onError={() => setLoading(false)}
+        />
+      ) : (
+        <img
+          src={url}
+          alt={`Adjunto de tarea ${cliente}`}
+          className="object-cover w-full h-full"
+          onLoad={() => setLoading(false)}
+          onError={() => setLoading(false)}
+        />
+      )}
+    </div>
+  );
+};
+
 import { useAuth } from '../hooks/useAuth';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useTasks } from '../hooks/useTasks';
@@ -71,45 +124,69 @@ const DashboardPage: React.FC = () => {
             </div>
             <h3 className="text-xl font-bold mb-4">Tareas de Hoy</h3>
             <div className="flex flex-col gap-4">
-              {tareasDeHoy.map((tarea) => (
-                <div key={tarea.id} className="flex items-center bg-white rounded-xl shadow-lg border border-blue-100 p-4 gap-4 hover:shadow-2xl transition-shadow duration-300">
-                  <div className="w-20 h-20 rounded overflow-hidden bg-gray-100 flex items-center justify-center">
-                    {tarea.imagen ? (
-                      <img src={tarea.imagen} alt="Tarea" className="object-cover w-full h-full" />
-                    ) : (
-                      <span className="text-gray-400 text-2xl">🖼️</span>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 font-bold">
-                      <span className="inline-flex items-center text-base">
-                        <UserIcon className="w-5 h-5 mr-1" />
-                        {tarea.cliente}
+              {(() => {
+                const tareasHoy = tareasDeHoy.filter(tarea => {
+                  if (!tarea.fecha_creacion) return false;
+                  const hoy = new Date();
+                  const fechaTarea = new Date(tarea.fecha_creacion);
+                  return (
+                    hoy.getFullYear() === fechaTarea.getFullYear() &&
+                    hoy.getMonth() === fechaTarea.getMonth() &&
+                    hoy.getDate() === fechaTarea.getDate()
+                  );
+                });
+                if (tareasHoy.length === 0) {
+                  return (
+                    <div className="flex flex-col items-center justify-center py-8 text-blue-700/80">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mb-2 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6 1a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="font-semibold text-lg">No tienes tareas registradas hoy.</span>
+                      <span className="text-sm text-blue-400">¡Disfruta tu día o crea una nueva tarea!</span>
+                    </div>
+                  );
+                }
+                return tareasHoy.map(tarea => (
+                  <div key={tarea.id} className="flex items-center bg-white rounded-xl shadow-lg border border-blue-100 p-4 gap-4 hover:shadow-2xl transition-shadow duration-300">
+                    <PreviewWithLoading url={tarea.primerAdjuntoUrl} cliente={tarea.cliente} />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 font-bold">
+                        <span className="inline-flex items-center text-base">
+                          <UserIcon className="w-5 h-5 mr-1" />
+                          <button
+                            type="button"
+                            className="text-blue-700 hover:underline focus:outline-none font-semibold"
+                            onClick={() => navigate(`/tareas/detalle/${tarea.id}`, { state: { task: tarea } })}
+                            title="Ver detalle de la tarea"
+                          >
+                            {tarea.cliente}
+                          </button>
+                        </span>
+                        {('alerta' in tarea) && tarea.alerta && <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500 ml-2" />}
+                      </div>
+                      <div className="flex items-center text-gray-600 text-sm gap-2 mt-1">
+                        <CalendarIcon className="w-4 h-4" />
+                        {tarea.fecha_inicio} - {tarea.hora_inicio}
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                        ${tarea.estado === 'Creada' ? 'bg-yellow-100 text-yellow-800' :
+                          tarea.estado === 'Pagada' ? 'bg-green-100 text-green-700' :
+                            tarea.estado === 'Enviada' ? 'bg-gray-200 text-gray-700' : ''}`}>
+                        {tarea.estado === 'Creada' && <LockClosedIcon className="w-4 h-4 mr-1" />}
+                        {tarea.estado === 'Pagada' && <CurrencyDollarIcon className="w-4 h-4 mr-1" />}
+                        {tarea.estado === 'Enviada' && <LockOpenIcon className="w-4 h-4 mr-1" />}
+                        {tarea.estado}
                       </span>
-                      {tarea.alerta && <ExclamationTriangleIcon className="w-5 h-5 text-yellow-500 ml-2" />}
-                    </div>
-                    <div className="flex items-center text-gray-600 text-sm gap-2 mt-1">
-                      <CalendarIcon className="w-4 h-4" />
-                      {tarea.fecha_inicio} - {tarea.hora_inicio}
+                      <span className="flex items-center text-gray-700 text-sm">
+                        <ClockIcon className="w-4 h-4 mr-1" />
+                        Total Hours: {tarea.horas_trabajadas}
+                      </span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
-                      ${tarea.estado === 'Creada' ? 'bg-yellow-100 text-yellow-800' :
-                        tarea.estado === 'Pagada' ? 'bg-green-100 text-green-700' :
-                          tarea.estado === 'Enviada' ? 'bg-gray-200 text-gray-700' : ''}`}>
-                      {tarea.estado === 'Creada' && <LockClosedIcon className="w-4 h-4 mr-1" />}
-                      {tarea.estado === 'Pagada' && <CurrencyDollarIcon className="w-4 h-4 mr-1" />}
-                      {tarea.estado === 'Enviada' && <LockOpenIcon className="w-4 h-4 mr-1" />}
-                      {tarea.estado}
-                    </span>
-                    <span className="flex items-center text-gray-700 text-sm">
-                      <ClockIcon className="w-4 h-4 mr-1" />
-                      Total Hours: {tarea.horas_trabajadas}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              })()}
             </div>
           </>
         )}
