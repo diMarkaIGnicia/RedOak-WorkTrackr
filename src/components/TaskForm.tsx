@@ -29,6 +29,149 @@ const TIPOS_TRABAJO = [
 
 const ESTADOS = ['Creada', 'Enviada', 'Pagada'];
 
+interface Observacion {
+  imagen: File | null;
+  preview: string | null;
+  nota: string;
+}
+
+import { InlineEditableObservacion } from './InlineEditableObservacion';
+
+const ObservacionesSection: React.FC<{
+  observaciones: Observacion[];
+  onChange: (obs: Observacion[]) => void;
+  readOnly?: boolean;
+  savedObservaciones: Array<{
+    id: string;
+    archivo_path: string;
+    tipo_archivo: string;
+    nota: string;
+  }>;
+  obsSignedUrls: Record<string, string>;
+  setSavedObservaciones: React.Dispatch<React.SetStateAction<Array<{ id: string; archivo_path: string; tipo_archivo: string; nota: string }>>>;
+  setObsSignedUrls: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  removingObsId: string | null;
+  removeSavedObservacion: (id: string, archivo_path: string) => void;
+}> = ({ observaciones, onChange, readOnly, savedObservaciones, obsSignedUrls, setSavedObservaciones, setObsSignedUrls, removingObsId, removeSavedObservacion }) => {
+  const handleImageChange = (i: number, file: File | null) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const newObs = [...observaciones];
+      newObs[i] = { ...newObs[i], imagen: file, preview: e.target?.result as string };
+      onChange(newObs);
+    };
+    reader.readAsDataURL(file);
+  };
+  const handleNoteChange = (i: number, nota: string) => {
+    const newObs = [...observaciones];
+    newObs[i] = { ...newObs[i], nota };
+    onChange(newObs);
+  };
+  const handleAdd = () => onChange([...observaciones, { imagen: null, preview: null, nota: '' }]);
+  const handleRemove = (i: number) => onChange(observaciones.filter((_, idx) => idx !== i));
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Observaciones guardadas (editables inline) */}
+      {savedObservaciones.map((obs, i) => (
+        <InlineEditableObservacion
+          key={obs.id}
+          observacion={obs}
+          url={obsSignedUrls[obs.id]}
+          onUpdate={async (newFile: File | null, newNota: string) => {
+            let archivo_path = obs.archivo_path;
+            let tipo_archivo = obs.tipo_archivo;
+            if (newFile) {
+              const ext = newFile.name.split('.').pop();
+              const path = `observaciones/${archivo_path.split('/').slice(1,2)[0]}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+              const { error: uploadErr } = await supabase.storage.from('tareas').upload(path, newFile, { upsert: true });
+              if (!uploadErr) {
+                archivo_path = path;
+                tipo_archivo = newFile.type.startsWith('image/') ? 'foto' : 'video';
+                if (obs.archivo_path && obs.archivo_path !== archivo_path) {
+                  await supabase.storage.from('tareas').remove([obs.archivo_path]);
+                }
+              } else {
+                alert('Error al subir archivo.');
+                return;
+              }
+            }
+            const { error: updErr } = await supabase.from('tarea_observaciones').update({ archivo_path, tipo_archivo, nota: newNota }).eq('id', obs.id);
+            if (!updErr) {
+              setSavedObservaciones((prev: typeof savedObservaciones) => prev.map((o) => o.id === obs.id ? { ...o, archivo_path, tipo_archivo, nota: newNota } : o));
+              let relativePath = archivo_path;
+              if (!relativePath.startsWith('observaciones/')) relativePath = `observaciones/${relativePath}`;
+              const { data: signed } = await supabase.storage.from('tareas').createSignedUrl(relativePath, 60*60);
+              setObsSignedUrls((prev: typeof obsSignedUrls) => ({ ...prev, [obs.id]: signed?.signedUrl || '' }));
+            } else {
+              alert('Error al actualizar observación.');
+            }
+          }}
+          readOnly={readOnly}
+          removing={removingObsId === obs.id}
+          onRemove={() => removeSavedObservacion(obs.id, obs.archivo_path)}
+        />
+      ))}
+      {/* Observaciones nuevas (no guardadas aún) */}
+      {observaciones.map((obs, i) => (
+        <div key={i} className="flex flex-col md:flex-row md:items-center gap-4 bg-blue-50 rounded-lg p-4 border border-blue-100 shadow-sm relative">
+          {/* Bloque de imagen/video y botones de carga */}
+          <div className="flex flex-col items-center gap-2">
+            {!readOnly && (
+              <div className="flex flex-col gap-2 items-center">
+                <div className="flex gap-2">
+                  <input
+                    id={`obs-camera-input-nueva-${i}`}
+                    type="file"
+                    accept="image/*,video/*"
+                    capture="environment"
+                    className="hidden"
+                    onChange={e => e.target.files && handleImageChange(i, e.target.files[0])}
+                  />
+                  <button
+                    type="button"
+                    className="flex flex-col items-center gap-0.5 px-2 py-1 border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 rounded-lg shadow transition text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-300"
+                    onClick={() => document.getElementById(`obs-camera-input-nueva-${i}`)?.click()}
+                    title="Tomar Foto/Video"
+                  >
+                    <svg className="w-6 h-6 mb-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553 2.276A2 2 0 0122 14.09V17a2 2 0 01-2 2H4a2 2 0 01-2-2v-2.91a2 2 0 011.447-1.814L8 10m7-2V7a5 5 0 00-10 0v1m10 0a5 5 0 01-10 0v1m10 0v1m-10-1v1" />
+                    </svg>
+                    Tomar Foto/Video
+                  </button>
+                </div>
+                {obs.imagen && (
+                  <span className="text-xs text-gray-500 mt-1 max-w-[8rem] truncate" title={obs.imagen.name}>{obs.imagen.name}</span>
+                )}
+              </div>
+            )}
+          </div>
+          <div className="flex-1 flex flex-col">
+            <label className="block text-xs font-semibold mb-1">Nota.</label>
+            <textarea
+              className="w-full min-h-[60px] border border-blue-200 rounded p-2 text-sm focus:ring-2 focus:ring-blue-100 resize-y"
+              value={obs.nota}
+              onChange={e => handleNoteChange(i, e.target.value)}
+              placeholder="Escribe una observación..."
+              disabled={readOnly}
+            />
+          </div>
+          {!readOnly && (
+            <button
+              type="button"
+              className="absolute top-2 right-2 text-red-500 hover:text-red-700 bg-white bg-opacity-80 rounded-full shadow px-2 py-1"
+              onClick={() => handleRemove(i)}
+              title="Eliminar observación"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export const TaskForm: React.FC<TaskFormProps & { rol: string }> = ({ initialValues, onSubmit, onCancel, submitLabel, rol, readOnly = false }) => {
 
   // Detectar si es edición (tiene id) o creación
@@ -106,8 +249,9 @@ export const TaskForm: React.FC<TaskFormProps & { rol: string }> = ({ initialVal
       return;
     }
     setError('');
-    // Solo pasa los datos y adjuntos al padre
-    onSubmit && onSubmit({ ...form, descripcion: form.descripcion || undefined }, attachments);
+    // Solo pasa los datos y adjuntos al padre; observaciones se pasan como tercer argumento
+    // eslint-disable-next-line
+    (onSubmit as any) && onSubmit({ ...form, descripcion: form.descripcion || undefined }, attachments, observaciones);
   };
 
   // --- Adjuntos ---
@@ -115,6 +259,73 @@ export const TaskForm: React.FC<TaskFormProps & { rol: string }> = ({ initialVal
   const cameraInputRef = React.useRef<HTMLInputElement>(null);
   // Adjuntos: archivos generales
   const [attachments, setAttachments] = React.useState<Array<{ file: File, tipo_archivo: string }>>([]);
+
+  // Observaciones: mezcla de guardadas (DB) y nuevas (local)
+  const [observaciones, setObservaciones] = React.useState<Observacion[]>([]);
+  const [savedObservaciones, setSavedObservaciones] = React.useState<Array<{
+    id: string;
+    archivo_path: string;
+    tipo_archivo: string;
+    nota: string;
+  }>>([]);
+  const [obsSignedUrls, setObsSignedUrls] = React.useState<Record<string, string>>({});
+
+  // Consulta observaciones guardadas y genera URLs firmadas
+  React.useEffect(() => {
+    const fetchObservaciones = async () => {
+      if (isEdit && initialValues?.id) {
+        const { data, error } = await supabase
+          .from('tarea_observaciones')
+          .select('id, archivo_path, tipo_archivo, nota')
+          .eq('tarea_id', initialValues.id);
+        if (!error && data) {
+          setSavedObservaciones(data);
+          // Generar URLs firmadas para cada archivo
+          const urls: Record<string, string> = {};
+          for (const obs of data) {
+            let relativePath = obs.archivo_path;
+            if (!relativePath.startsWith('observaciones/')) {
+              relativePath = `observaciones/${relativePath}`;
+            }
+            const { data: signed, error: signErr } = await supabase.storage.from('tareas').createSignedUrl(relativePath, 60 * 60);
+            if (!signErr && signed?.signedUrl) {
+              urls[obs.id] = signed.signedUrl;
+            }
+          }
+          setObsSignedUrls(urls);
+        }
+      }
+    };
+    fetchObservaciones();
+  }, [isEdit, initialValues?.id]);
+
+  // Eliminar observación guardada (DB y storage)
+  const [removingObsId, setRemovingObsId] = React.useState<string | null>(null);
+  const removeSavedObservacion = async (id: string, archivo_path: string) => {
+    const confirm = window.confirm('¿Estás seguro de que deseas eliminar esta observación? Esta acción no se puede deshacer.');
+    if (!confirm) return;
+    setRemovingObsId(id);
+    let relativePath = archivo_path;
+    if (!relativePath.startsWith('observaciones/')) {
+      relativePath = `observaciones/${relativePath}`;
+    }
+    let storageError = false;
+    let dbError = false;
+    // 1. Eliminar de Storage
+    const { error: storageErr } = await supabase.storage.from('tareas').remove([relativePath]);
+    if (storageErr) storageError = true;
+    // 2. Eliminar de la base de datos
+    const { error: dbErr } = await supabase.from('tarea_observaciones').delete().eq('id', id);
+    if (dbErr) dbError = true;
+    // 3. Actualizar UI
+    setSavedObservaciones(prev => prev.filter(o => o.id !== id));
+    setRemovingObsId(null);
+    if (storageError || dbError) {
+      alert('Error al eliminar la observación. Intenta de nuevo.');
+    } else {
+      alert('Observación eliminada correctamente.');
+    }
+  };
 
   // Previews para adjuntos nuevos
   const [attachmentPreviews, setAttachmentPreviews] = React.useState<string[]>([]);
@@ -295,7 +506,7 @@ export const TaskForm: React.FC<TaskFormProps & { rol: string }> = ({ initialVal
       </div>
       {/* --- Adjuntos generales --- */}
       <div className="mb-6">
-        <label className="block text-sm font-medium mb-1 flex items-center gap-1">Archivos Adjuntos
+        <label className="block text-sm font-semibold mb-1 flex items-center gap-1">Archivos Adjuntos
           <span className="relative group cursor-pointer ml-1">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="white" />
@@ -312,14 +523,15 @@ export const TaskForm: React.FC<TaskFormProps & { rol: string }> = ({ initialVal
           </span>
         </label>
         <div className="flex flex-row justify-center gap-3 mt-4">
-          {/* Botón para tomar foto o video */}
+
           {!readOnly && (
             <>
+              {/* Botón para tomar foto o video */}
               <button
                 type="button"
                 className="flex flex-col items-center gap-1 px-4 py-2 border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 rounded-lg shadow transition text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-300"
                 onClick={() => cameraInputRef.current?.click()}
-                >
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7h2l2-3h10l2 3h2a2 2 0 012 2v10a2 2 0 01-2 2H3a2 2 0 01-2-2V9a2 2 0 012-2zm9 6a3 3 0 100-6 3 3 0 000 6z" />
                 </svg>
@@ -330,7 +542,7 @@ export const TaskForm: React.FC<TaskFormProps & { rol: string }> = ({ initialVal
                 type="button"
                 className="flex flex-col items-center gap-1 px-4 py-2 border border-gray-300 bg-white hover:bg-gray-100 text-gray-700 rounded-lg shadow transition text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-200"
                 onClick={() => fileInputRef.current?.click()}
-                >
+              >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 9l5-5 5 5" />
@@ -526,6 +738,42 @@ export const TaskForm: React.FC<TaskFormProps & { rol: string }> = ({ initialVal
             })}
           </div>
         )}
+
+        {/* Sección de Observaciones */}
+        <div className="mt-8">
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-semibold font-medium flex items-center gap-1 m-0 p-0">
+              <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+              Observaciones
+            </label>
+            {!readOnly && (
+              <button
+                type="button"
+                className="flex items-center justify-center px-2 py-1 h-8 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg shadow-sm transition-all text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                onClick={() => setObservaciones([...observaciones, { imagen: null, preview: null, nota: '' }])}
+                title="Agregar observación"
+                aria-label="Agregar observación"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Observación
+              </button>
+            )}
+          </div>
+          {/* Observaciones: render único y controlado */}
+          <ObservacionesSection
+            observaciones={observaciones}
+            onChange={setObservaciones}
+            readOnly={readOnly}
+            savedObservaciones={savedObservaciones || []}
+            obsSignedUrls={obsSignedUrls || {}}
+            setSavedObservaciones={setSavedObservaciones}
+            setObsSignedUrls={setObsSignedUrls}
+            removingObsId={removingObsId || null}
+            removeSavedObservacion={removeSavedObservacion || (() => {})}
+          />
+        </div>
       </div>
       {/* Botones de acción */}
       <div className="mt-6 flex gap-4 justify-end">

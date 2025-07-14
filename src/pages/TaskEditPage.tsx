@@ -17,47 +17,56 @@ export default function TaskEditPage() {
   // Si location.state tiene task, es edición; si no, es creación
   const task = (location.state && (location.state as any).task) as (TaskFormValues & { id?: string }) | undefined;
 
-  const handleSubmit = async (values: TaskFormValues, attachments: Array<{ file: File, tipo_archivo: string }>) => {
+  const handleSubmit = async (values: TaskFormValues, attachments: Array<{ file: File, tipo_archivo: string }>, observaciones?: Array<{ imagen: File | null, preview: string | null, nota: string }>) => {
     if (!profile?.id) {
       alert('Usuario no autenticado');
       return;
     }
     try {
       let tarea;
-      let error;
-      let tareaId;
-      if (task && task.id) {
-        // UPDATE si existe
-        const res = await supabase
-          .from('tareas')
-          .update({
-            ...values,
-            descripcion: values.descripcion || null,
-            estado: (profile.rol === 'administrador') ? values.estado : 'Creada',
-            usuario_id: profile.id,
-          })
-          .eq('id', task.id)
-          .select()
-          .single();
-        tarea = res.data;
-        error = res.error;
-        tareaId = tarea.id;
-      } else {
-        // INSERT si es nueva
-        const res = await supabase
-          .from('tareas')
-          .insert([{
-            ...values,
-            descripcion: values.descripcion || null,
-            estado: (profile.rol === 'administrador') ? values.estado : 'Creada',
-            usuario_id: profile.id,
-          }])
-          .select()
-          .single();
-        tarea = res.data;
-        error = res.error;
-        tareaId = tarea.id;
-      }
+let error;
+let tareaId;
+const tareaPayload = {
+  fecha_inicio: values.fecha_inicio,
+  hora_inicio: values.hora_inicio,
+  cliente: values.cliente,
+  tipo_trabajo: values.tipo_trabajo,
+  horas_trabajadas: values.horas_trabajadas,
+  tarifa_por_hora: values.tarifa_por_hora,
+  estado: (profile.rol === 'administrador') ? values.estado : 'Creada',
+  descripcion: values.descripcion || null,
+  usuario_id: profile.id,
+};
+if (task && task.id) {
+  // UPDATE si existe
+  const res = await supabase
+    .from('tareas')
+    .update(tareaPayload)
+    .eq('id', task.id)
+    .select()
+    .single();
+  tarea = res.data;
+  error = res.error;
+  if (!tarea) {
+    alert('Error actualizando la tarea: ' + (error?.message || 'Sin datos'));
+    return;
+  }
+  tareaId = tarea.id;
+} else {
+  // INSERT si es nueva
+  const res = await supabase
+    .from('tareas')
+    .insert([tareaPayload])
+    .select()
+    .single();
+  tarea = res.data;
+  error = res.error;
+  if (!tarea) {
+    alert('Error creando la tarea: ' + (error?.message || 'Sin datos'));
+    return;
+  }
+  tareaId = tarea.id;
+}
       if (error) throw error;
 
       // 2. Subir adjuntos a storage y registrar en la tabla
@@ -74,6 +83,28 @@ export default function TaskEditPage() {
           }]);
         } else {
           alert('Error subiendo un adjunto');
+        }
+      }
+      // 3. Guardar observaciones (si existen)
+      if (observaciones && observaciones.length > 0) {
+        for (const obs of observaciones) {
+          if (obs.imagen) {
+            const ext = obs.imagen.name.split('.').pop();
+            const uuid = crypto.randomUUID();
+            const tipo_archivo = obs.imagen.type.startsWith('video/') ? 'video' : 'imagen';
+            const storagePath = `observaciones/${tareaId}/${uuid}.${ext}`;
+            const { error: uploadError } = await supabase.storage.from('tareas').upload(storagePath, obs.imagen);
+            if (!uploadError) {
+              await supabase.from('tarea_observaciones').insert([{
+                tarea_id: tareaId,
+                tipo_archivo,
+                archivo_path: `${tareaId}/${uuid}.${ext}`,
+                nota: obs.nota,
+              }]);
+            } else {
+              alert('Error subiendo una observación');
+            }
+          }
         }
       }
       navigate('/tareas');
