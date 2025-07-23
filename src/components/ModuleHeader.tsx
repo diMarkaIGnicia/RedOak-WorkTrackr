@@ -25,7 +25,7 @@ const ModuleHeader: React.FC<ModuleHeaderProps> = ({ onMenuClick }) => {
         <img src="/logo.png" alt="Logo" className="h-8 w-auto filter brightness-0 invert" />
       </div>
       <span className="font-semibold text-white truncate max-w-[180px] text-right">
-        {profile?.nombre_completo || user?.email || 'Usuario'}
+        {profile?.full_name || user?.email || 'Usuario'}
       </span>
     </header>
   );

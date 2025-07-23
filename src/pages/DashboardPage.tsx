@@ -56,6 +56,7 @@ const PreviewWithLoading: React.FC<{ url?: string; cliente: string }> = ({ url, 
 import { useAuth } from '../hooks/useAuth';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useTasks } from '../hooks/useTasks';
+import { useHoursWorked } from '../hooks/useHoursWorked';
 import { UserIcon, CalendarIcon, LockClosedIcon, LockOpenIcon, CurrencyDollarIcon, ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useAllEmployeesWithTasks } from '../hooks/useAllEmployees'; // Nuevo hook para admin
 import EmployeeCard from '../components/EmployeeCard';
@@ -80,13 +81,13 @@ const DashboardPage: React.FC = () => {
   const { empleados, loading: loadingEmpleados, error: errorEmpleados } = useAllEmployeesWithTasks({ rango });
 
   // Loading global
-  if (loadingUser || loadingProfile || loadingTareas || (profile?.rol === 'administrador' && loadingEmpleados)) {
+  if (loadingUser || loadingProfile || loadingTareas || (profile?.role === 'administrator' && loadingEmpleados)) {
     return <ModuleTemplate><div className="p-8">Cargando...</div></ModuleTemplate>;
   }
   if (!profile) {
     return <ModuleTemplate><div className="p-8 text-red-700">No se pudo cargar el perfil de usuario.</div></ModuleTemplate>;
   }
-  if (profile.rol === 'administrador' && errorEmpleados) {
+  if (profile.role === 'administrator' && errorEmpleados) {
     return <ModuleTemplate><div className="p-8 text-red-700">Error cargando empleados: {errorEmpleados}</div></ModuleTemplate>;
   }
 
@@ -94,7 +95,7 @@ const DashboardPage: React.FC = () => {
     <ModuleTemplate>
       <div className="p-6 bg-gray-50 min-h-screen">
         {/* Dashboard para EMPLEADO */}
-        {profile.rol === 'empleado' && (
+        {profile.role === 'employee' && (
           <>
             <h1 className="text-3xl font-bold mb-2">Bienvenido de nuevo</h1>
             <div className="flex justify-center mb-8">
@@ -191,7 +192,7 @@ const DashboardPage: React.FC = () => {
           </>
         )}
         {/* Dashboard para ADMINISTRADOR */}
-        {profile.rol === 'administrador' && (
+        {profile.rol === 'administrator' && (
           <div>
             <h1 className="text-3xl font-montserrat font-bold mb-2">Bienvenido de nuevo</h1>
             <h2 className="text-lg font-montserrat font-normal mb-6">Este es el resumen de tu Empleados</h2>
@@ -212,7 +213,7 @@ const DashboardPage: React.FC = () => {
               {empleados.map(emp => (
                 <EmployeeCard
                   key={emp.id}
-                  nombre={emp.nombre_completo}
+                  nombre={emp.full_name}
                   foto={emp.foto_url}
                   tareas={emp.tareas}
                 />

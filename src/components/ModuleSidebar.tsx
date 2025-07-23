@@ -11,7 +11,7 @@ interface MenuItem {
 }
 
 const MENU_ITEMS: { [key: string]: MenuItem[] } = {
-  empleado: [
+  employee: [
     {
       label: 'Dashboard',
       path: '/dashboard',
@@ -22,8 +22,8 @@ const MENU_ITEMS: { [key: string]: MenuItem[] } = {
       ),
     },
     {
-      label: 'Tareas',
-      path: '/tareas',
+      label: 'Horas Trabajadas',
+      path: '/horas-trabajadas',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -39,8 +39,17 @@ const MENU_ITEMS: { [key: string]: MenuItem[] } = {
         </svg>
       ),
     },
+    {
+      label: 'Facturas',
+      path: '/facturas',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l1.5 1.5 3-3m2.25-6h-10.5A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5h10.5A2.25 2.25 0 0018 17.25V6.75A2.25 2.25 0 0015.75 4.5zm-1.5-2.25a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+        </svg>
+      ),
+    },
   ],
-  administrador: [
+  administrator: [
     {
       label: 'Dashboard',
       path: '/dashboard',
@@ -114,10 +123,10 @@ const ModuleSidebar: React.FC<ModuleSidebarProps> = ({ open, onClose }) => {
 
   // Determinar menú según rol
   let mainMenu: MenuItem[] = [];
-  if (profile?.rol === 'administrador') {
-    mainMenu = MENU_ITEMS.administrador;
-  } else if (profile?.rol === 'empleado') {
-    mainMenu = MENU_ITEMS.empleado;
+  if (profile?.role === 'administrator') {
+    mainMenu = MENU_ITEMS.administrator;
+  } else if (profile?.role === 'employee') {
+    mainMenu = MENU_ITEMS.employee;
   }
 
   return (

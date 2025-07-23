@@ -3,8 +3,8 @@ import { supabase } from '../services/supabaseClient';
 
 export interface UserProfile {
   id: string;
-  nombre_completo: string;
-  rol: string;
+  full_name: string;
+  role: string;
   foto_url?: string;
 }
 
@@ -18,7 +18,7 @@ export function useUserProfile(userId: string | undefined) {
     setLoading(true);
     setError(null);
     supabase
-      .from('usuarios')
+      .from('users')
       .select('*')
       .eq('auth_user_id', userId)
       .single()

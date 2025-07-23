@@ -3,7 +3,7 @@ import { supabase } from '../services/supabaseClient';
 
 export interface EmployeeProfile {
   id: string;
-  nombre_completo: string;
+  full_name: string;
   rol: string;
   foto_url?: string;
 }
