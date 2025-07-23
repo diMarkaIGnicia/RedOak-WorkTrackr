@@ -9,7 +9,8 @@ import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import ProtectedRoute from './ProtectedRoute';
 import { useAuth } from '../hooks/useAuth';
-import ModuleTemplate from '../layouts/ModuleTemplate';
+import ReportsPage from '../pages/ReportsPage';
+import ReportsEditPage from '../pages/ReportsEditPage';
 
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();
@@ -43,6 +44,21 @@ const AppRoutes: React.FC = () => {
         <Route path="/horas-trabajadas/detalle/:id" element={
           <ProtectedRoute isAuth={!!user}>
             <HoursWorkedDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/reportes" element={
+          <ProtectedRoute isAuth={!!user}>
+            <ReportsPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/reportes/nuevo" element={
+          <ProtectedRoute isAuth={!!user}>
+            <ReportsEditPage/>
+          </ProtectedRoute>
+        } />
+        <Route path="/reportes/editar/:id" element={
+          <ProtectedRoute isAuth={!!user}>
+            <ReportsEditPage />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
