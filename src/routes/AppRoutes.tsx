@@ -2,9 +2,9 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '../pages/LoginPage';
 import DashboardPage from '../pages/DashboardPage';
-import TasksPage from '../pages/TasksPage';
-import TaskEditPage from '../pages/TaskEditPage';
-import TaskDetailPage from '../pages/TaskDetailPage';
+import HoursWorkedPage from '../pages/HoursWorkedPage';
+import HoursWorkedEditPage from '../pages/HoursWorkedEditPage';
+import HoursWorkedDetailPage from '../pages/HoursWorkedDetailPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import ProtectedRoute from './ProtectedRoute';
@@ -25,24 +25,24 @@ const AppRoutes: React.FC = () => {
             <DashboardPage />
           </ProtectedRoute>
         } />
-        <Route path="/tareas" element={
+        <Route path="/horas-trabajadas" element={
           <ProtectedRoute isAuth={!!user}>
-            <TasksPage />
+            <HoursWorkedPage />
           </ProtectedRoute>
         } />
-        <Route path="/tareas/nueva" element={
+        <Route path="/horas-trabajadas/nueva" element={
           <ProtectedRoute isAuth={!!user}>
-            <TaskEditPage />
+            <HoursWorkedEditPage />
           </ProtectedRoute>
         } />
-        <Route path="/tareas/editar/:id" element={
+        <Route path="/horas-trabajadas/editar/:id" element={
           <ProtectedRoute isAuth={!!user}>
-            <TaskEditPage />
+            <HoursWorkedEditPage />
           </ProtectedRoute>
         } />
-        <Route path="/tareas/detalle/:id" element={
+        <Route path="/horas-trabajadas/detalle/:id" element={
           <ProtectedRoute isAuth={!!user}>
-            <TaskDetailPage />
+            <HoursWorkedDetailPage />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
