@@ -49,6 +49,7 @@ export const HoursWorkedForm: React.FC<HoursWorkedFormProps & { role: string }> 
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    if (readOnly) return;
     const { name, value } = e.target;
     setForm((f: HoursWorkedFormValues) => ({
       ...f,

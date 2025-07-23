@@ -192,7 +192,7 @@ export default function HoursWorkedPage() {
                           title="Editar"
                           onClick={() => navigate(`/horas-trabajadas/editar/${hoursWorked.id}`, {
                             state: {
-                              task: {
+                              hoursWorked: {
                                 id: hoursWorked.id,
                                 date_worked: hoursWorked.date_worked || '',
                                 customer_id: hoursWorked.customer_id || '',

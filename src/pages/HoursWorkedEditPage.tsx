@@ -15,7 +15,7 @@ export default function HoursWorkedEditPage() {
   const { addHoursWorked, updateHoursWorked } = useHoursWorked(profile?.id);
 
   // Si location.state tiene task, es edición; si no, es creación
-  const task = (location.state && (location.state as any).task) as (HoursWorkedFormValues & { id?: string }) | undefined;
+  const hoursWorked = (location.state && (location.state as any).hoursWorked) as (HoursWorkedFormValues & { id?: string }) | undefined;
 
   const handleSubmit = async (values: HoursWorkedFormValues) => {
     if (!profile?.id) {
@@ -36,12 +36,12 @@ export default function HoursWorkedEditPage() {
         state: (profile.role === 'administrator') ? values.state : 'Creada',
         user_id: profile.id,
       };
-      if (task && task.id) {
+      if (hoursWorked && hoursWorked.id) {
         // UPDATE si existe
         const res = await supabase
           .from('hours_worked')
           .update(hoursWorkedPayload)
-          .eq('id', task.id)
+          .eq('id', hoursWorked.id)
           .select()
           .single();
         hoursWorked = res.data;
@@ -81,12 +81,12 @@ export default function HoursWorkedEditPage() {
   return (
     <ModuleTemplate>
       <div className="max-w-3xl mx-auto p-8 bg-white rounded-2xl shadow-2xl border border-gray-200 mt-8">
-        <h1 className="text-2xl font-montserrat font-bold mb-6 text-blue-dark">{task ? 'Editar Horas Trabajadas' : 'Registrar Horas Trabajadas'}</h1>
+        <h1 className="text-2xl font-montserrat font-bold mb-6 text-blue-dark">{hoursWorked ? 'Editar Horas Trabajadas' : 'Registrar Horas Trabajadas'}</h1>
         <HoursWorkedForm
-          initialValues={task}
+          initialValues={hoursWorked}
           onSubmit={handleSubmit}
           onCancel={() => navigate('/horas-trabajadas')}
-          submitLabel={task ? 'Actualizar' : 'Crear'}
+          submitLabel={hoursWorked ? 'Actualizar' : 'Crear'}
           role={profile?.role || ''}
         />
       </div>
