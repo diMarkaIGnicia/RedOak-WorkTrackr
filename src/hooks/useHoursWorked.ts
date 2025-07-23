@@ -8,10 +8,11 @@ export interface HoursWorked {
   customer_id: string;
   customer_name?: string; // nombre completo del cliente
   type_work: string;
-  rate_per_hour: number;
+  rate_hour: number;
   hours: number;
   description: string;
   state: string;
+  created_at: string;
 }
 
 export function useHoursWorked(
