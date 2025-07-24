@@ -123,12 +123,15 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ ini
         <Attachments reportId={initialValues.id} readOnly={readOnly} />
       )}
 
-      {/* Observaciones */}
-      <ObservationsSection
-        initialObservations={observations}
-        onObservationsChange={setObservations}
-        disabled={readOnly}
-      />
+      {/* Observaciones solo visibles en edición */}
+      {initialValues?.id && (
+        <ObservationsSection
+          reportId={initialValues.id}
+          initialObservations={observations}
+          onObservationsChange={setObservations}
+          disabled={readOnly}
+        />
+      )}
 
       {/* Botones de acción */}
       <div className="mt-6 flex gap-4 justify-end">

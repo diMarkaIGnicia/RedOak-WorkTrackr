@@ -1,4 +1,5 @@
 import React from 'react';
+import { toast } from 'react-hot-toast';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { ReportsForm, ReportsFormValues } from '../components/ReportsForm';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -94,63 +95,18 @@ export default function ReportsEditPage() {
       }
       if (error) throw error;
 
-      // --- Observaciones: subir archivos y guardar en DB ---
-      if (reportId && Array.isArray(observations) && observations.length > 0) {
-        for (const obs of observations) {
-          // 1. Eliminar observaciones marcadas como deleted y que tengan id en DB
-          if (obs.deleted && obs.id && !obs.file) {
-            // Eliminar de storage usando la ruta relativa (pathRel) si existe
-            let storagePath = obs.pathRel;
-            // Backup: si no hay pathRel, intentar extraer de fileUrl
-            if (!storagePath && obs.fileUrl) {
-              const match = obs.fileUrl.match(/(observations\/.+?)(\?|$)/);
-              storagePath = match ? match[1] : undefined;
-            }
-            if (storagePath) {
-              await supabase.storage.from('reports').remove([storagePath]);
-            }
-            // Eliminar de DB
-            await supabase.from('report_observations').delete().eq('id', obs.id);
-            continue;
-          }
-          // 2. Actualizar nota de observaciones existentes
-          if (obs.updated && obs.id && obs.fileUrl) {
-            await supabase.from('report_observations').update({ note: obs.note }).eq('id', obs.id);
-            continue;
-          }
-          // 3. Insertar nuevas observaciones
-          let fileUrl = obs.fileUrl;
-          let fileType = obs.fileType;
-          if (obs.file && !fileUrl) {
-            const ext = obs.file.name.split('.').pop();
-            const filePath = `observations/${reportId}/${crypto.randomUUID()}.${ext}`;
-            const { error: uploadError } = await supabase.storage.from('reports').upload(filePath, obs.file);
-            if (uploadError) {
-              alert('Error subiendo archivo de observación: ' + uploadError.message);
-              continue;
-            }
-            // Storage es privado: guardar la ruta relativa
-            fileUrl = filePath;
-            fileType = obs.file.type;
-          }
-          if (fileUrl && obs.id) {
-            const { data: insertData, error: insertError } = await supabase.from('report_observations').insert({
-              report_id: reportId,
-              file_type: fileType,
-              path: fileUrl,
-              note: obs.note,
-            }).select('*').single();
-            if (insertError) {
-              alert('Error guardando observación: ' + insertError.message);
-            }
-          }
-        }
+      if (report && report.id) {
+        // Si es update, navega a la lista
+        navigate('/reportes');
+      } else {
+        // Si es insert, permanece en la página y recarga el estado con el nuevo reporte
+        toast.success('Reporte creado correctamente. Puedes continuar editando.');
+        navigate(`/reportes/editar/${reportId}`, { replace: true, state: { report: { ...reportPayload, id: reportId } } });
       }
-
-      navigate('/reportes');
     } catch (err: any) {
-      alert('Error guardando el reporte');
-      console.error(err);
+      const msg = err?.message || (typeof err === 'string' ? err : JSON.stringify(err));
+      toast.error('Error guardando el reporte: ' + msg);
+      console.error('Error guardando el reporte:', err);
     } finally {
       setIsSaving(false);
     }

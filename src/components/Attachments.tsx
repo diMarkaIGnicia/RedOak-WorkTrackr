@@ -109,9 +109,9 @@ const Attachments: React.FC<AttachmentsProps> = ({ reportId, readOnly }) => {
   };
 
   return (
-    <div className="mb-4">
+    <div className="py-6">
       <Toaster position="top-right" />
-      <label className="block text-sm font-medium mb-1">Adjuntar archivos, fotos o videos</label>
+      <label className="block text-md font-bold mb-1">Adjuntar archivos, fotos o videos</label>
       {!readOnly && (
         <div className="flex items-center gap-3 mb-2">
           <input
@@ -171,14 +171,14 @@ const Attachments: React.FC<AttachmentsProps> = ({ reportId, readOnly }) => {
         </div>
       )}
       {/* Miniaturas */}
-      <div className="flex gap-2 flex-wrap mt-2">
+      <div className="flex gap-2 flex-wrap mt-5">
         {attachments.map(att => (
-          <div key={att.id || att.path} className="relative group">
-            {/* Botón eliminar */}
+          <div key={att.id || att.path} className="relative group w-24 h-24 flex items-center justify-center">
+            {/* Botón eliminar sobrepuesto */}
             {!readOnly && (
               <button
                 type="button"
-                className="absolute -top-2 -right-2 z-10 bg-white rounded-full p-1 shadow-lg border border-gray-200 opacity-80 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-600 text-gray-400"
+                className="absolute top-1 right-1 z-20 bg-white rounded-full shadow-lg border border-gray-200 opacity-90 group-hover:opacity-100 transition-opacity hover:bg-red-100 hover:text-red-600 text-gray-400"
                 title="Eliminar adjunto"
                 onClick={async () => {
                   if (removingId) return;
