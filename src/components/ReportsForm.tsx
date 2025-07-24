@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import CustomerAutocomplete from './CustomerAutocomplete';
 import ObservationsSection, { Observation } from './ObservationsSection';
+import Attachments from './Attachments';
 
 
 export interface ReportsFormValues {
@@ -116,6 +117,11 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ ini
       </div>
 
       
+
+      {/* Adjuntos */}
+      {!readOnly && initialValues?.id && (
+        <Attachments reportId={initialValues.id} readOnly={readOnly} />
+      )}
 
       {/* Observaciones */}
       <ObservationsSection

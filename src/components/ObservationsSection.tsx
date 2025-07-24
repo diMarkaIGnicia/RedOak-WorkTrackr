@@ -116,41 +116,6 @@ const ObservationsSection: React.FC<ObservationsSectionProps> = ({
     );
   };
 
-  // Upload file to Supabase Storage and return the public URL
-  const uploadFile = async (file: File, obsId: string): Promise<{ url?: string; type?: string }> => {
-    const ext = file.name.split('.').pop();
-    const filePath = `${FOLDER}/${uuidv4()}.${ext}`;
-    const { error } = await supabase.storage.from(BUCKET).upload(filePath, file);
-    if (error) {
-      alert('Error subiendo archivo: ' + error.message);
-      return {};
-    }
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-    return { url: data.publicUrl, type: file.type };
-  };
-
-  // Save all observations (call this from parent on submit)
-  const saveObservations = async () => {
-    if (!reportId) return;
-    for (const obs of observations) {
-      let fileUrl = obs.fileUrl;
-      let fileType = obs.fileType;
-      if (obs.file && !fileUrl) {
-        const upload = await uploadFile(obs.file, obs.id);
-        fileUrl = upload.url;
-        fileType = upload.type;
-      }
-      // Insert into DB (report_observations)
-      if (fileUrl) {
-        await supabase.from('report_observations').insert({
-          report_id: reportId,
-          file_type: fileType,
-          path: fileUrl,
-          note: obs.note,
-        });
-      }
-    }
-  };
 
   return (
     <div className="mb-6">
