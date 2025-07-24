@@ -58,7 +58,7 @@ export default function ReportsEditPage() {
   const handleSubmit = async (values: ReportsFormValues, observations: any[] = []) => {
     setIsSaving(true);
     if (!profile?.id) {
-      alert('Usuario no autenticado');
+      toast.error('Usuario no autenticado');
       return;
     }
     try {
@@ -78,20 +78,22 @@ export default function ReportsEditPage() {
         reportResult = res.data;
         error = res.error;
         if (!reportResult) {
-          alert('Error actualizando el reporte: ' + (error?.message || 'Sin datos'));
+          toast.error('Error actualizando el reporte: ' + (error?.message || 'Sin datos'));
           return;
         }
         reportId = reportResult.id;
+        toast.success('Reporte actualizado correctamente');
       } else {
         // INSERT si es nueva
         const res = await supabase.from('reports').insert([reportPayload]).select().single();
         reportResult = res.data;
         error = res.error;
         if (!reportResult) {
-          alert('Error registrando el reporte: ' + (error?.message || 'Sin datos'));
+          toast.error('Error registrando el reporte: ' + (error?.message || 'Sin datos'));
           return;
         }
         reportId = reportResult.id;
+        toast.success('Reporte creado correctamente');
       }
       if (error) throw error;
 

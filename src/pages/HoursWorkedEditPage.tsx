@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import { useHoursWorked } from '../hooks/useHoursWorked';
 import { supabase } from '../services/supabaseClient';
+import { toast } from 'react-hot-toast';
 
 export default function HoursWorkedEditPage() {
   const navigate = useNavigate();
@@ -19,11 +20,11 @@ export default function HoursWorkedEditPage() {
 
   const handleSubmit = async (values: HoursWorkedFormValues) => {
     if (!profile?.id) {
-      alert('Usuario no autenticado');
+      toast.error('Usuario no autenticado');
       return;
     }
     try {
-      let hoursWorked;
+      let result;
       let error;
       let hoursWorkedId;
       const hoursWorkedPayload = {
@@ -44,13 +45,14 @@ export default function HoursWorkedEditPage() {
           .eq('id', hoursWorked.id)
           .select()
           .single();
-        hoursWorked = res.data;
+        result = res.data;
         error = res.error;
-        if (!hoursWorked) {
-          alert('Error actualizando las horas trabajadas: ' + (error?.message || 'Sin datos'));
+        if (!result) {
+          toast.error('Error actualizando las horas trabajadas: ' + (error?.message || 'Sin datos'));
           return;
         }
-        hoursWorkedId = hoursWorked.id;
+        hoursWorkedId = result.id;
+        toast.success('Hora de trabajo actualizada correctamente');
       } else {
         // INSERT si es nueva
         const res = await supabase
@@ -58,19 +60,20 @@ export default function HoursWorkedEditPage() {
           .insert([hoursWorkedPayload])
           .select()
           .single();
-        hoursWorked = res.data;
+        result = res.data;
         error = res.error;
-        if (!hoursWorked) {
-          alert('Error registrando las horas trabajadas: ' + (error?.message || 'Sin datos'));
+        if (!result) {
+          toast.error('Error registrando las horas trabajadas: ' + (error?.message || 'Sin datos'));
           return;
         }
-        hoursWorkedId = hoursWorked.id;
+        hoursWorkedId = result.id;
+        toast.success('Hora de trabajo creada correctamente');
       }
       if (error) throw error;
 
       navigate('/horas-trabajadas');
     } catch (err: any) {
-      alert('Error guardando las horas trabajadas');
+      toast.error('Error guardando las horas trabajadas');
       console.error(err);
     }
   };
