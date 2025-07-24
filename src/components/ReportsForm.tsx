@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import CustomerAutocomplete from './CustomerAutocomplete';
+import ObservationsSection, { Observation } from './ObservationsSection';
 
 
 export interface ReportsFormValues {
@@ -12,14 +13,16 @@ export interface ReportsFormValues {
 
 interface ReportsFormProps {
   initialValues?: ReportsFormValues;
-  onSubmit?: (values: ReportsFormValues) => void;
+  initialObservations?: any[];
+  onSubmit?: (values: ReportsFormValues, observations?: any[]) => void;
   onCancel: () => void;
   submitLabel?: string;
   readOnly?: boolean;
+  isSaving?: boolean;
 }
 
 
-export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ initialValues, onSubmit, onCancel, submitLabel, role, readOnly = false }) => {
+export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ initialValues, initialObservations = [], onSubmit, onCancel, submitLabel, role, readOnly = false, isSaving = false }) => {
 
   const [form, setForm] = useState<ReportsFormValues>(
     initialValues || {
@@ -30,7 +33,12 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ ini
     }
   );
   const [error, setError] = useState('');
+  const [observations, setObservations] = useState<Observation[]>(initialObservations);
 
+  // Sincroniza el estado local de observaciones con las props iniciales cuando cambian
+  React.useEffect(() => {
+    setObservations(initialObservations);
+  }, [initialObservations]);
 
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -42,7 +50,7 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ ini
   };
 
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (readOnly) return;
       // Validación detallada
@@ -66,9 +74,12 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ ini
         return;
       }
       setError('');
-      // Solo pasa los datos y adjuntos al padre; observaciones se pasan como tercer argumento
-      // eslint-disable-next-line
-      (onSubmit as any) && onSubmit({ ...form });
+      // Guardar observaciones en Supabase (si hay reportId)
+      // Si el reporte aún no existe, el padre debe guardar primero el reporte y luego las observaciones
+      if (form && (onSubmit as any)) {
+        // El padre debe encargarse de guardar el reporte y luego las observaciones
+        (onSubmit as any)({ ...form }, observations);
+      }
     };
 
 
@@ -106,11 +117,30 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ ini
 
       
 
+      {/* Observaciones */}
+      <ObservationsSection
+        initialObservations={observations}
+        onObservationsChange={setObservations}
+        disabled={readOnly}
+      />
+
       {/* Botones de acción */}
       <div className="mt-6 flex gap-4 justify-end">
         <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={onCancel}>Cancelar</button>
         {!readOnly && (
-          <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow">{submitLabel || "Guardar"}</button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 shadow flex items-center gap-2"
+            disabled={isSaving}
+          >
+            {isSaving && (
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+              </svg>
+            )}
+            {isSaving ? 'Guardando...' : (submitLabel || 'Guardar')}
+          </button>
         )}
       </div>
     </form>
