@@ -87,7 +87,11 @@ export default function ResetPasswordPage() {
           {error && <div className="bg-red-50 border border-red-200 text-red-600 text-sm text-center rounded-lg py-2 px-3 animate-fade-in mt-2 shadow-sm">{error}</div>}
           {message && <div className="bg-green-50 border border-green-200 text-green-700 text-sm text-center rounded-lg py-2 px-3 animate-fade-in mt-2 shadow-sm">{message}</div>}
         </form>
-        <div className="mt-6 text-xs text-gray text-center pb-2">© {new Date().getFullYear()} RedOak. Todos los derechos reservados.</div>
+        <div className="mt-6 text-xs text-gray text-center pb-2">
+          © {new Date().getFullYear()} RedOak.
+          <br />
+          Desarrollado por <a href="https://dimarka.com" target="_blank" rel="noopener noreferrer" className="text-blue text-xs underline underline-offset-2 hover:text-blue-dark transition-colors animate-fade-in cursor-pointer">diMarka</a>.
+        </div>
       </div>
     </div>
   );

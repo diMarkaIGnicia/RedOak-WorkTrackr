@@ -100,7 +100,11 @@ const LoginPage: React.FC = () => {
             <a href="/forgot-password" className="text-blue text-xs underline underline-offset-2 hover:text-blue-dark transition-colors animate-fade-in cursor-pointer">¿Olvidaste tu contraseña?</a>
           </div>
         </form>
-        <div className="mt-6 text-xs text-gray text-center pb-2">© {new Date().getFullYear()} RedOak. Todos los derechos reservados.</div>
+        <div className="mt-6 text-xs text-gray text-center pb-2">
+          © {new Date().getFullYear()} RedOak.
+          <br />
+          Desarrollado por <a href="https://dimarka.com" target="_blank" rel="noopener noreferrer" className="text-blue text-xs underline underline-offset-2 hover:text-blue-dark transition-colors animate-fade-in cursor-pointer">diMarka</a>.
+        </div>
       </div>
     </div>
   );
