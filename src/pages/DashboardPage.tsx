@@ -55,7 +55,6 @@ const PreviewWithLoading: React.FC<{ url?: string; cliente: string }> = ({ url, 
 
 import { useAuth } from '../hooks/useAuth';
 import { useUserProfile } from '../hooks/useUserProfile';
-import { useTasks } from '../hooks/useTasks';
 import { useHoursWorked } from '../hooks/useHoursWorked';
 import { UserIcon, CalendarIcon, LockClosedIcon, LockOpenIcon, CurrencyDollarIcon, ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useAllEmployeesWithTasks } from '../hooks/useAllEmployees'; // Nuevo hook para admin
@@ -76,13 +75,12 @@ const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, loading: loadingUser } = useAuth();
   const { profile, loading: loadingProfile } = useUserProfile(user?.id);
-  const { tasks: tareasDeHoy, loading: loadingTareas } = useTasks(profile?.id);
   const { hoursWorked, loading: loadingHoursWorked } = useHoursWorked(profile?.id);
   // Nuevo hook para admin
   const { empleados, loading: loadingEmpleados, error: errorEmpleados } = useAllEmployeesWithTasks({ rango });
 
   // Loading global
-  if (loadingUser || loadingProfile || loadingTareas || loadingHoursWorked || (profile?.role === 'administrator' && loadingEmpleados)) {
+  if (loadingUser || loadingProfile || loadingHoursWorked || (profile?.role === 'administrator' && loadingEmpleados)) {
     return <ModuleTemplate><div className="p-8">Cargando...</div></ModuleTemplate>;
   }
   if (!profile) {
