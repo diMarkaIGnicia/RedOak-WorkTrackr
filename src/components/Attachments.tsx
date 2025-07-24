@@ -25,6 +25,7 @@ const Attachments: React.FC<AttachmentsProps> = ({ reportId, readOnly }) => {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [error, setError] = useState('');
   const [removingId, setRemovingId] = useState<number | undefined>(undefined);
+  const [modalMedia, setModalMedia] = useState<{ url: string, type: 'image' | 'video' } | undefined>(undefined);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cargar adjuntos ya guardados al cargar el componente
@@ -209,16 +210,69 @@ const Attachments: React.FC<AttachmentsProps> = ({ reportId, readOnly }) => {
                 )}
               </button>
             )}
+            {/* Botón ver imagen o video centrado */}
+            {(att.file_type.startsWith('image') || att.file_type.startsWith('video')) && (
+              <button
+                type="button"
+                className="absolute inset-0 z-10 flex items-center justify-center bg-black/10 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                title={att.file_type.startsWith('image') ? 'Ver imagen adjunta' : 'Ver video adjunto'}
+                onClick={() => setModalMedia({ url: att.fileUrl, type: att.file_type.startsWith('image') ? 'image' : 'video' })}
+                style={{ backdropFilter: 'blur(2px)' }}
+              >
+                <span className="bg-white/80 rounded-full p-2 shadow border border-gray-200 hover:bg-blue-100 hover:text-blue-600 text-gray-700">
+                  <svg className="w-7 h-7" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </span>
+              </button>
+            )}
             {att.file_type.startsWith('image') ? (
-              <img src={att.fileUrl} alt="adjunto" className="w-16 h-16 object-cover rounded border" />
+              <img src={att.fileUrl} alt="adjunto" className="w-24 h-24 md:w-32 md:h-32 object-cover rounded border" />
             ) : att.file_type.startsWith('video') ? (
-              <video src={att.fileUrl} controls className="w-16 h-16 object-cover rounded border" />
+              <video src={att.fileUrl} controls className="w-24 h-24 md:w-32 md:h-32 object-cover rounded border" />
             ) : (
-              <a href={att.fileUrl} target="_blank" rel="noopener noreferrer" className="block w-16 h-16 bg-gray-100 border rounded flex items-center justify-center text-xs text-blue-700 underline">Ver archivo</a>
+              <a href={att.fileUrl} target="_blank" rel="noopener noreferrer" className="block w-24 h-24 md:w-32 md:h-32 bg-gray-100 border rounded flex items-center justify-center text-xs text-blue-700 underline">Ver archivo</a>
             )}
           </div>
         ))}
       </div>
+
+      {/* Modal de visualización ampliada */}
+      {modalMedia && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fade-in">
+          <div className="relative max-w-full max-h-full flex flex-col items-center justify-center">
+            <button
+              className="absolute top-2 right-2 bg-white/80 hover:bg-white rounded-full p-2 shadow text-gray-700 z-10"
+              onClick={() => setModalMedia(undefined)}
+              title="Cerrar"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+            {modalMedia.type === 'image' ? (
+              <img
+                src={modalMedia.url}
+                alt="Adjunto ampliado"
+                className="max-w-[90vw] max-h-[80vh] rounded-xl shadow-xl border-4 border-white object-contain bg-white"
+                onClick={e => e.stopPropagation()}
+              />
+            ) : (
+              <video
+                src={modalMedia.url}
+                controls
+                autoPlay
+                className="max-w-[90vw] max-h-[80vh] rounded-xl shadow-xl border-4 border-white bg-black"
+                onClick={e => e.stopPropagation()}
+              />
+            )}
+          </div>
+          {/* Cierre modal al hacer clic fuera */}
+          <div className="fixed inset-0 z-40" onClick={() => setModalMedia(undefined)} />
+        </div>
+      )}
+
     </div>
   );
 };
