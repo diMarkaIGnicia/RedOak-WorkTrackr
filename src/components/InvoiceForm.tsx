@@ -44,9 +44,6 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
     ? useHoursWorked(profile.id, { invoice_id: null }, 1, 100)
     : { hoursWorked: [], loading: true };
 
-  // Combinar estados de carga
-  const loadingHoursWorked = loadingAssociated || loadingAvailable;
-
   const {
     initialValues = {},
     onSubmit,
@@ -57,19 +54,35 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
   } = props;
   // Garantizar que initialValues nunca sea null/undefined
   const safeInitialValues = React.useRef(initialValues || {});
-  const [values, setValues] = React.useState<InvoiceFormValues>({
+  const [values, setValues] = React.useState<InvoiceFormValues>(() => ({
     invoice_number: safeInitialValues.current.invoice_number || '',
-    user_id: safeInitialValues.current.user_id || '',
-    account_name: safeInitialValues.current.account_name || '',
-    account_number: safeInitialValues.current.account_number || '',
-    bsb: safeInitialValues.current.bsb || '',
-    abn: safeInitialValues.current.abn || '',
-    mobile_number: safeInitialValues.current.mobile_number || '',
+    user_id: safeInitialValues.current.user_id || profile?.id || '',
+    account_name: safeInitialValues.current.account_name || profile?.account_name || '',
+    account_number: safeInitialValues.current.account_number || profile?.account_number || '',
+    bsb: safeInitialValues.current.bsb || profile?.bsb || '',
+    abn: safeInitialValues.current.abn || profile?.abn || '',
+    mobile_number: safeInitialValues.current.mobile_number || profile?.mobile_number || '',
     status: safeInitialValues.current.status || 'Creada',
-    address: safeInitialValues.current.address || '',
-    date_off: safeInitialValues.current.date_off || '',
+    address: safeInitialValues.current.address || profile?.address || '',
+    date_off: safeInitialValues.current.date_off || new Date().toISOString().split('T')[0],
     hours_worked_ids: safeInitialValues.current.hours_worked_ids || [],
-  });
+  }));
+
+  // Update form values when profile loads
+  React.useEffect(() => {
+    if (profile && !safeInitialValues.current.id) { // Only auto-fill for new invoices
+      setValues(prev => ({
+        ...prev,
+        user_id: profile.id,
+        account_name: profile.account_name || prev.account_name,
+        account_number: profile.account_number || prev.account_number,
+        bsb: profile.bsb || prev.bsb,
+        abn: profile.abn || prev.abn,
+        mobile_number: profile.mobile_number || prev.mobile_number,
+        address: profile.address || prev.address,
+      }));
+    }
+  }, [profile]);
 
   // Estado para el modal y la selección temporal
   const [modalOpen, setModalOpen] = React.useState(false);

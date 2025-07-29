@@ -225,7 +225,7 @@ const DashboardPage: React.FC = () => {
                 <EmployeeCard
                   key={emp.id}
                   nombre={emp.full_name}
-                  foto={emp.foto_url}
+                  photo_url={emp.photo_url}
                   tareas={emp.tareas}
                 />
               ))}

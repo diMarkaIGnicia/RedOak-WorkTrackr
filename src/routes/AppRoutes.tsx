@@ -14,6 +14,7 @@ import ReportsEditPage from '../pages/ReportsEditPage';
 import InvoicePage from '../pages/InvoicePage';
 import InvoiceEditPage from '../pages/InvoiceEditPage';
 import InvoiceDetailPage from '../pages/InvoiceDetailPage';
+import ProfilePage from '../pages/ProfilePage';
 
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();
@@ -82,6 +83,11 @@ const AppRoutes: React.FC = () => {
         <Route path="/facturas/detalle/:id" element={
           <ProtectedRoute isAuth={!!user}>
             <InvoiceDetailPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/perfil" element={
+          <ProtectedRoute isAuth={!!user}>
+            <ProfilePage />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

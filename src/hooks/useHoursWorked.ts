@@ -117,15 +117,46 @@ export function useHoursWorked(
 
   const deleteHoursWorked = async (id: string) => {
     try {
+      // Primero verificar si la hora está asociada a una factura
+      const { data: hourData, error: fetchError } = await supabase
+        .from('hours_worked')
+        .select('invoice_id')
+        .eq('id', id)
+        .single();
 
-      // Eliminar la tarea
+      if (fetchError) {
+        // Solo mostramos el error en consola y retornamos false
+        console.error('Error al verificar la hora trabajada:', fetchError);
+        return { success: false, error: 'No se pudo verificar la hora trabajada' };
+      }
+      
+      if (hourData?.invoice_id) {
+        return { 
+          success: false, 
+          error: 'No se puede eliminar una hora que ya está incluida en una factura' 
+        };
+      }
+
+      // Si no está asociada a ninguna factura, proceder con la eliminación
       const { error } = await supabase.from('hours_worked').delete().eq('id', id);
-      if (error) throw new Error('Error eliminando la tarea');
+      if (error) {
+        console.error('Error eliminando la hora trabajada:', error);
+        return { 
+          success: false, 
+          error: 'No se pudo eliminar la hora trabajada' 
+        };
+      }
 
+      // Actualizar el estado local
       setHoursWorked((prev) => prev.filter((t) => t.id !== id));
+      
+      return { success: true };
     } catch (err: any) {
-      setError(err.message || 'Error eliminando las horas registradas');
-      alert(err.message || 'Error eliminando las horas registradas');
+      console.error('Error inesperado al eliminar hora trabajada:', err);
+      return { 
+        success: false, 
+        error: 'Ocurrió un error inesperado' 
+      };
     }
   };
 

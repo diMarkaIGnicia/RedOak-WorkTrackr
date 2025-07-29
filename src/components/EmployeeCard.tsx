@@ -7,11 +7,11 @@ interface Task {
 
 interface EmployeeCardProps {
   nombre: string;
-  foto: string;
+  photo_url: string;
   tareas: Task[];
 }
 
-export const EmployeeCard: React.FC<EmployeeCardProps> = ({ nombre, foto, tareas }) => {
+export const EmployeeCard: React.FC<EmployeeCardProps> = ({ nombre, photo_url, tareas }) => {
   const tareasCompletadas = tareas.length;
   const horasTrabajadas = tareas.reduce((acc, t) => acc + (t.horas_trabajadas || 0), 0);
 
@@ -19,7 +19,7 @@ export const EmployeeCard: React.FC<EmployeeCardProps> = ({ nombre, foto, tareas
     <div className="flex items-center bg-white rounded-xl shadow border px-4 py-3 gap-4 max-w-md w-full">
       <div className="relative">
         <img
-          src={foto || '/avatar-placeholder.png'}
+          src={photo_url || '/avatar-placeholder.png'}
           alt={nombre}
           className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
         />

@@ -4,6 +4,7 @@ import ModuleTemplate from '../layouts/ModuleTemplate';
 import { useHoursWorked, HoursWorked } from '../hooks/useHoursWorked';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfileContext } from '../context/UserProfileContext';
+import Toast from '../components/Toast';
 
 const ESTADOS = ['Creada', 'Enviada', 'Pagada'];
 
@@ -25,7 +26,16 @@ export default function HoursWorkedPage() {
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const { hoursWorked, loading, error, totalCount, page: currentPage, pageSize: currentPageSize, setPage: setPageFromHook, deleteHoursWorked } = useHoursWorked(profile?.id, filters, page, pageSize);
-  const [deletedMsg, setDeletedMsg] = useState("");
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info' | 'warning';
+    show: boolean;
+  }>({ message: '', type: 'info', show: false });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
+    setToast({ message, type, show: true });
+    setTimeout(() => setToast(prev => ({ ...prev, show: false })), 3000);
+  };
 
   if (loadingProfile) {
     return <ModuleTemplate><div className="p-8">Cargando...</div></ModuleTemplate>;
@@ -33,10 +43,17 @@ export default function HoursWorkedPage() {
 
   // Eliminar tarea con confirmación
   const handleDelete = async (id: string) => {
-    if (window.confirm('¿Seguro que deseas eliminar esta hora trabajada?')) {
-      await deleteHoursWorked(id);
-      setDeletedMsg('Hora trabajada eliminada correctamente');
-      setTimeout(() => setDeletedMsg(''), 2000);
+    // Usar un diálogo personalizado en lugar de window.confirm
+    const confirmDelete = window.confirm('¿Seguro que deseas eliminar esta hora trabajada?');
+    if (!confirmDelete) return;
+    
+    const result = await deleteHoursWorked(id);
+    if (result.success) {
+      showToast('Hora trabajada eliminada correctamente', 'success');
+    } else if (result.error) {
+      showToast(result.error, 'error');
+    } else {
+      showToast('Ocurrió un error al procesar la solicitud', 'error');
     }
   };
 
@@ -267,10 +284,13 @@ export default function HoursWorkedPage() {
           </div>
         </div>
       </div>
-      {deletedMsg && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-all animate-fade-in">
-          {deletedMsg}
-        </div>
+      {toast.show && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          duration={3000}
+          onClose={() => setToast(prev => ({ ...prev, show: false }))}
+        />
       )}
     </ModuleTemplate>
   );

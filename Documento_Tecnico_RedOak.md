@@ -34,6 +34,7 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `id`: UUID (PK)
 - `full_name`: TEXT
 - `email`: TEXT (único)
+- `photo_url`: TEXT
 - `role`: ENUM('employee', 'administrator', ...)
 - `account_name`: TEXT 
 - `account_number`: TEXT
@@ -42,7 +43,8 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `mobile_number`: TEXT
 - `address`: TEXT
 - `auth_user_id`: UUID (FK a auth.users)
-- `created_at`: TIMESTAMP
+- `created_at`: TIMESTAMP default now()
+- `updated_at`: TIMESTAMP
 
 ---
 
@@ -52,7 +54,8 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `full_name`: TEXT
 - `emails`: TEXT (único)
 - `service_address`: TEXT
-- `created_at`: TIMESTAMP
+- `created_at`: TIMESTAMP default now()
+
 
 ---
 
@@ -69,7 +72,7 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `descripcion`: TEXT (opcional)
 - `state`: ENUM('Creada', 'Enviada', 'Pagada') (solo visible al admin)
 - `location`: GEOJSON o JSONB
-- `created_at`: TIMESTAMP
+- `created_at`: TIMESTAMP default now()
 - `invoice_id`: UUID (FK a facturas)
 
 ### 📝 Reportes
@@ -81,7 +84,7 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `customer_id`: UUID (FK a clientes)
 - `descripcion`: TEXT (opcional)
 - `location`: GEOJSON o JSONB
-- `created_at`: TIMESTAMP
+- `created_at`: TIMESTAMP default now()
 
 ---
 
@@ -91,7 +94,7 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `report_id`: UUID (FK a reportes)
 - `path`: TEXT
 - `type_file`: TEXT
-- `created_at`: TIMESTAMP
+- `created_at`: TIMESTAMP default now()
 
 ---
 
@@ -102,7 +105,7 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `type_file`: TEXT
 - `path`: TEXT
 - `note`: TEXT
-- `created_at`: TIMESTAMP
+- `created_at`: TIMESTAMP default now()
 
 ---
 
@@ -119,7 +122,7 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `address`: TEXT (opcional)
 - `date_off`: DATE
 - `status`: ENUM('Creada', 'Enviada', 'En Revisión', 'Pagada')
-- `created_at`: TIMESTAMP
+- `created_at`: TIMESTAMP default now()
 
 ### 🔗 Reporte Tareas
 

@@ -4,8 +4,8 @@ import { supabase } from '../services/supabaseClient';
 export interface EmployeeProfile {
   id: string;
   full_name: string;
-  rol: string;
-  foto_url?: string;
+  role: string;
+  photo_url?: string;
 }
 
 export interface EmployeeWithTasks extends EmployeeProfile {
