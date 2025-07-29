@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import ModuleTemplate from '../layouts/ModuleTemplate';
-import { useAuth } from '../hooks/useAuth';
 import { useHoursWorked, HoursWorked } from '../hooks/useHoursWorked';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfileContext } from '../context/UserProfileContext';
@@ -9,7 +8,6 @@ import { useUserProfileContext } from '../context/UserProfileContext';
 const ESTADOS = ['Creada', 'Enviada', 'Pagada'];
 
 export default function HoursWorkedPage() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const { profile, loading: loadingProfile } = useUserProfileContext();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);

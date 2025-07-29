@@ -13,6 +13,7 @@ export interface Invoice {
   address: string;
   date_off: string;
   created_at?: string;
+  status?: string;
   total?: number; // Total calculado (horas * tarifa)
 }
 

@@ -99,27 +99,38 @@ const DashboardPage: React.FC = () => {
             <h1 className="text-3xl font-bold mb-2">Bienvenido de nuevo</h1>
             <div className="flex justify-center mb-8">
               <div className="bg-blue-50 border border-blue-200 shadow-lg rounded-2xl flex flex-col md:flex-row items-center gap-4 px-8 py-6 w-full max-w-xl animate-fade-in">
-                <div className="flex flex-col md:flex-row gap-4 w-full justify-center">
-                  <button
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold shadow flex items-center gap-2 text-base transition-colors w-full md:w-auto"
-                    onClick={() => navigate('/horas-trabajadas/nueva')}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span className="font-montserrat">Horas</span>
-                  </button>
-                  <button
-                    className="bg-white border border-blue-400 text-blue-700 hover:bg-blue-100 px-5 py-2 rounded-lg font-semibold shadow flex items-center gap-2 text-base transition-colors w-full md:w-auto"
-                    onClick={() => navigate('/reportes/nuevo')}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span className="font-montserrat">Reporte</span>
-                  </button>
+                <div className="w-full">
+                  <div className="flex flex-col md:flex-row gap-4 w-full justify-center">
+                    <button
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-semibold shadow flex items-center gap-2 text-base transition-colors w-full md:w-auto"
+                      onClick={() => navigate('/horas-trabajadas/nueva')}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="font-montserrat">Horas</span>
+                    </button>
+                    <button
+                      className="bg-white border border-blue-400 text-blue-700 hover:bg-blue-100 px-5 py-2 rounded-lg font-semibold shadow flex items-center gap-2 text-base transition-colors w-full md:w-auto"
+                      onClick={() => navigate('/reportes/nuevo')}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="font-montserrat">Reporte</span>
+                    </button>
+                    <button
+                      className="bg-white border border-blue-400 text-blue-700 hover:bg-blue-100 px-5 py-2 rounded-lg font-semibold shadow flex items-center gap-2 text-base transition-colors w-full md:w-auto"
+                      onClick={() => navigate('/facturas/crear')}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <span className="font-montserrat">Factura</span>
+                    </button>
+                  </div>
+                  <div className="text-xs text-blue-700 mt-2 text-center font-montserrat">Accesos rápidos para registrar horas, reportes o facturas</div>
                 </div>
-                <div className="text-xs text-blue-700 mt-2 md:mt-0 md:ml-4 font-montserrat">Accesos rápidos para registrar horas o reportes</div>
               </div>
             </div>
             <h3 className="text-xl font-bold mb-4">Horas Trabajadas de Hoy</h3>
@@ -142,7 +153,7 @@ const DashboardPage: React.FC = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6 1a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <span className="font-semibold text-lg">No tienes horas registradas hoy.</span>
-                      <span className="text-sm text-blue-400">¡Disfruta tu día o crea una nueva hora!</span>
+                      <span className="text-sm text-blue-400">¡Disfruta tu día o registra nuevas horas trabajadas!</span>
                     </div>
                   );
                 }
@@ -192,7 +203,7 @@ const DashboardPage: React.FC = () => {
           </>
         )}
         {/* Dashboard para ADMINISTRADOR */}
-        {profile.rol === 'administrator' && (
+        {profile.role === 'administrator' && (
           <div>
             <h1 className="text-3xl font-montserrat font-bold mb-2">Bienvenido de nuevo</h1>
             <h2 className="text-lg font-montserrat font-normal mb-6">Este es el resumen de tu Empleados</h2>

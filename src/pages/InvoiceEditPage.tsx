@@ -26,6 +26,12 @@ export default function InvoiceEditPage() {
       const { invoice_number, hours_worked_ids = [], date_off, ...restValues } = values;
       const isEdit = !!invoice?.id;
       
+      // Validar que haya horas trabajadas seleccionadas para facturas nuevas
+      if (!isEdit && (!hours_worked_ids || hours_worked_ids.length === 0)) {
+        toast.error('Debes agregar al menos una hora trabajada para crear una factura');
+        return;
+      }
+      
       // Si es una factura nueva, establecer la fecha automáticamente
       const invoiceData = isEdit 
         ? { ...restValues, user_id: profile?.id }

@@ -4,7 +4,10 @@ import Modal from './Modal';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import { useHoursWorked } from '../hooks/useHoursWorked';
 
+export type InvoiceStatus =  'Creada' | 'Enviada' | 'En Revisión' | 'Pagada';
+
 export interface InvoiceFormValues {
+  id?: string;
   invoice_number: string;
   user_id: string;
   account_name: string;
@@ -12,6 +15,7 @@ export interface InvoiceFormValues {
   bsb: string;
   abn: string;
   mobile_number: string;
+  status?: InvoiceStatus;
   address: string;
   date_off: string;
   hours_worked_ids?: string[]; // IDs de horas trabajadas asociadas
@@ -61,6 +65,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
     bsb: safeInitialValues.current.bsb || '',
     abn: safeInitialValues.current.abn || '',
     mobile_number: safeInitialValues.current.mobile_number || '',
+    status: safeInitialValues.current.status || 'Creada',
     address: safeInitialValues.current.address || '',
     date_off: safeInitialValues.current.date_off || '',
     hours_worked_ids: safeInitialValues.current.hours_worked_ids || [],
@@ -78,7 +83,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modalOpen]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setValues((v) => ({ ...v, [name]: value }));
   };
@@ -147,18 +152,44 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
             required
           />
         </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Teléfono <span className="text-red-500">*</span></label>
-          <input
-            type="text"
-            name="mobile_number"
-            value={values.mobile_number}
-            onChange={handleChange}
-            className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
-            disabled={readOnly}
-            required
-          />
+        <div >
+            <label className="block text-sm font-medium mb-1">Teléfono <span className="text-red-500">*</span></label>
+            <input
+              type="text"
+              name="mobile_number"
+              value={values.mobile_number}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
+              disabled={readOnly}
+              required
+            />
         </div>
+        {!readOnly && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Estado</label>
+              <select
+                name="status"
+                value={values.status}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition bg-white"
+                disabled={readOnly}
+              >
+                {role === 'employee' ? (
+                  <>
+                    <option value="Creada">Creada</option>
+                    <option value="Enviada">Enviada</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Creada">Creada</option>
+                    <option value="Enviada">Enviada</option>
+                    <option value="En Revisión">En Revisión</option>
+                    <option value="Pagada">Pagada</option>
+                  </>
+                )}
+              </select>
+            </div>
+          )}
         <div className="md:col-span-2">
           <label className="block text-sm font-medium mb-1">Dirección <span className="text-red-500">*</span></label>
           <input

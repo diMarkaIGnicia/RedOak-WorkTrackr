@@ -26,7 +26,7 @@ const MENU_ITEMS: { [key: string]: MenuItem[] } = {
       path: '/horas-trabajadas',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },
@@ -35,7 +35,8 @@ const MENU_ITEMS: { [key: string]: MenuItem[] } = {
       path: '/reportes',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l1.5 1.5 3-3m2.25-6h-10.5A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5h10.5A2.25 2.25 0 0018 17.25V6.75A2.25 2.25 0 0015.75 4.5zm-1.5-2.25a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
         </svg>
       ),
     },
@@ -44,7 +45,7 @@ const MENU_ITEMS: { [key: string]: MenuItem[] } = {
       path: '/facturas',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l1.5 1.5 3-3m2.25-6h-10.5A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5h10.5A2.25 2.25 0 0018 17.25V6.75A2.25 2.25 0 0015.75 4.5zm-1.5-2.25a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
         </svg>
       ),
     },
@@ -64,7 +65,8 @@ const MENU_ITEMS: { [key: string]: MenuItem[] } = {
       path: '/reportes',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l1.5 1.5 3-3m2.25-6h-10.5A2.25 2.25 0 003 6.75v10.5A2.25 2.25 0 005.25 19.5h10.5A2.25 2.25 0 0018 17.25V6.75A2.25 2.25 0 0015.75 4.5zm-1.5-2.25a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
         </svg>
       ),
     },
@@ -73,7 +75,7 @@ const MENU_ITEMS: { [key: string]: MenuItem[] } = {
       path: '/tareas',
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },

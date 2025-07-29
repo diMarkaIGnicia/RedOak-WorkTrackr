@@ -13,7 +13,11 @@ export default function InvoicePage() {
   }
 
   const [filters, setFilters] = useState<Partial<Invoice>>({});
-  const [pendingFilters, setPendingFilters] = useState<Partial<Invoice>>({ date_off: '', invoice_number: '' });
+  const [pendingFilters, setPendingFilters] = useState<Partial<Invoice>>({ 
+    date_off: '', 
+    invoice_number: '',
+    status: ''
+  });
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const {
@@ -42,6 +46,7 @@ export default function InvoicePage() {
     const newFilters: Partial<Invoice> = {};
     if (pendingFilters.date_off) newFilters.date_off = pendingFilters.date_off;
     if (pendingFilters.invoice_number) newFilters.invoice_number = pendingFilters.invoice_number;
+    if (pendingFilters.status) newFilters.status = pendingFilters.status;
     
     setFilters(newFilters);
     setPage(1);
@@ -88,6 +93,21 @@ export default function InvoicePage() {
               style={{ minHeight: 32, minWidth: 170 }}
             />
           </div>
+          <div className="flex-1 w-full md:w-auto max-w-xs">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <select
+              value={pendingFilters.status || ''}
+              onChange={e => setPendingFilters(f => ({ ...f, status: e.target.value || undefined }))}
+              className="border border-gray-400 rounded px-2 py-1 w-full sm:text-sm focus:ring-2 focus:ring-blue-500 transition text-gray-700"
+              style={{ minHeight: 32, minWidth: 170 }}
+            >
+              <option value="">Todos los estados</option>
+              <option value="Creada">Creada</option>
+              <option value="Enviada">Enviada</option>
+              <option value="En Revisión">En Revisión</option>
+              <option value="Pagada">Pagada</option>
+            </select>
+          </div>
           <div className="flex flex-row gap-2 items-end">
             <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold shadow-sm flex items-center gap-2 text-sm transition-colors" style={{ minHeight: 32 }}>
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -95,7 +115,7 @@ export default function InvoicePage() {
               </svg>
               Buscar
             </button>
-            {(filters.date_off || filters.invoice_number) && (
+            {(filters.date_off || filters.invoice_number || filters.status) && (
               <button
                 type="button"
                 className="flex items-center gap-1 px-2 py-1 rounded border border-gray-300 bg-gray-100 text-xs text-gray-700 hover:bg-gray-200 transition btn-xs"
@@ -103,7 +123,7 @@ export default function InvoicePage() {
                 title="Limpiar filtros"
                 onClick={() => {
                   setFilters({});
-                  setPendingFilters({ date_off: '', invoice_number: '' });
+                  setPendingFilters({ date_off: '', invoice_number: '', status: '' });
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -125,6 +145,7 @@ export default function InvoicePage() {
                   <th className="px-4 py-2">Cuenta</th>
                   <th className="px-4 py-2">Fecha de Corte</th>
                   <th className="px-4 py-2 text-right">Total</th>
+                  <th className="px-4 py-2">Estado</th>
                   <th className="px-4 py-2">Acciones</th>
                 </tr>
               </thead>
@@ -137,6 +158,7 @@ export default function InvoicePage() {
                     <td className="px-4 py-2 text-right font-medium">
                       {inv.total !== undefined ? `$${inv.total.toLocaleString('es-CO')}` : '-'}
                     </td>
+                    <td className="px-4 py-2 text-center">{inv.status}</td>
                     <td className="px-4 py-2 text-sm text-center">
                       <button
                         className="text-blue-600 hover:bg-blue-50 rounded-full p-1"
@@ -149,9 +171,16 @@ export default function InvoicePage() {
                         </svg>
                       </button>
                       <button
-                        className="text-yellow-600 hover:bg-yellow-50 rounded-full p-1"
-                        title="Editar"
-                        onClick={() => navigate(`/facturas/editar/${inv.id}`, { state: { invoice: inv } })}
+                        className={`${profile?.role === 'employee' && inv.status !== 'Creada' ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-600 hover:bg-yellow-50'} rounded-full p-1`}
+                        title={profile?.role === 'employee' && inv.status !== 'Creada' ? 'No puedes editar facturas que no estén en estado Creada' : 'Editar'}
+                        onClick={() => {
+                          if (profile?.role === 'employee' && inv.status !== 'Creada') {
+                            toast.error('Solo puedes editar facturas en estado Creada');
+                            return;
+                          }
+                          navigate(`/facturas/editar/${inv.id}`, { state: { invoice: inv } });
+                        }}
+                        disabled={profile?.role === 'employee' && inv.status !== 'Creada'}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.21l-4 1 1-4 12.362-12.723z" />

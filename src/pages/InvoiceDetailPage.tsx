@@ -24,7 +24,14 @@ export default function InvoiceDetailPage() {
   return (
     <ModuleTemplate>
       <div className="max-w-3xl mx-auto p-8 bg-white rounded-2xl shadow-2xl border border-gray-200 mt-8">
-        <h1 className="text-2xl font-montserrat font-bold mb-6 text-blue-dark">Detalle de la Factura</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-montserrat font-bold text-blue-dark">Detalle de la Factura</h1>
+          {invoiceData?.status && (
+            <div className="bg-gray-100 px-4 py-2 rounded-full text-sm font-medium">
+              Estado: {invoiceData.status}
+            </div>
+          )}
+        </div>
         <InvoiceForm
           initialValues={invoiceData}
           onSubmit={undefined}
