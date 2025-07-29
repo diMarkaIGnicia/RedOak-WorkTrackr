@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabaseClient';
 
 export interface HoursWorked {
@@ -13,6 +13,7 @@ export interface HoursWorked {
   description: string;
   state: string;
   created_at: string;
+  invoice_id?: string | null; // id de la factura asociada (opcional)
 }
 
 export function useHoursWorked(
@@ -21,6 +22,7 @@ export function useHoursWorked(
     date_worked?: string;
     customer_id?: string;
     state?: string;
+    invoice_id?: string | null;
   },
   page: number = 1,
   pageSize: number = 10
@@ -32,7 +34,8 @@ export function useHoursWorked(
   const [currentPage, setPage] = useState(page);
   const [currentPageSize] = useState(pageSize);
 
-  const fetchHoursWorked = useCallback(async () => {
+  // fetchHoursWorked como función estable (no useCallback)
+  async function fetchHoursWorked() {
     setLoading(true);
     setError(null);
     const from = (currentPage - 1) * currentPageSize;
@@ -56,6 +59,13 @@ export function useHoursWorked(
     if (filters?.state) {
       query = query.eq('state', filters.state);
     }
+    if (filters?.invoice_id === null) {
+      // Solo horas sin factura asociada
+      query = query.is('invoice_id', null);
+    } else if (filters?.invoice_id) {
+      // Solo horas asociadas a una factura específica
+      query = query.eq('invoice_id', filters.invoice_id);
+    }
     query = query.order('date_worked', { ascending: false });
     query = query.range(from, to);
     const { data, error, count } = await query;
@@ -64,7 +74,6 @@ export function useHoursWorked(
       setLoading(false);
       return;
     }
-
     // Mapear para incluir customer_name
     const mapped = (data || []).map((item: any) => ({
       ...item,
@@ -73,12 +82,15 @@ export function useHoursWorked(
     setHoursWorked(mapped);
     setTotalCount(count || 0);
     setLoading(false);
-  }, [userId, filters, currentPage, currentPageSize]);
+  }
 
+  // Un solo useEffect para fetch y suscripción, con logs de depuración
+  const mountedRef = useRef(false);
   useEffect(() => {
     if (!userId) return;
+    if (filters && Object.prototype.hasOwnProperty.call(filters, 'invoice_id') && typeof filters.invoice_id === 'undefined') return;
+    mountedRef.current = true;
     fetchHoursWorked();
-    // Real-time subscription
     const channel = supabase.channel('public:hours_worked')
       .on(
         'postgres_changes',
@@ -86,8 +98,11 @@ export function useHoursWorked(
         fetchHoursWorked
       )
       .subscribe();
-    return () => { channel.unsubscribe(); };
-  }, [userId, fetchHoursWorked]);
+    return () => {
+      channel.unsubscribe();
+      mountedRef.current = false;
+    };
+  }, [userId, JSON.stringify(filters), currentPage, currentPageSize]);
 
   // CRUD operations
   const addHoursWorked = async (hoursWorked: Omit<HoursWorked, 'id'>) => {
@@ -114,5 +129,25 @@ export function useHoursWorked(
     }
   };
 
-  return { hoursWorked, loading, error, totalCount, page: currentPage, pageSize: currentPageSize, setPage, addHoursWorked, updateHoursWorked, deleteHoursWorked };
+  // Actualizar en lote el invoice_id de varias horas trabajadas
+  const batchUpdateInvoiceId = async (invoiceId: string, hourIds: string[]) => {
+    if (!hourIds.length) return;
+    const { error } = await supabase
+      .from('hours_worked')
+      .update({ invoice_id: invoiceId })
+      .in('id', hourIds);
+    if (error) setError(error.message);
+  };
+
+  // Desasociar horas (poner invoice_id a null)
+  const batchClearInvoiceId = async (hourIds: string[]) => {
+    if (!hourIds.length) return;
+    const { error } = await supabase
+      .from('hours_worked')
+      .update({ invoice_id: null })
+      .in('id', hourIds);
+    if (error) setError(error.message);
+  };
+
+  return { hoursWorked, loading, error, totalCount, page: currentPage, pageSize: currentPageSize, setPage, addHoursWorked, updateHoursWorked, deleteHoursWorked, batchUpdateInvoiceId, batchClearInvoiceId };
 }

@@ -1,18 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 import { useUserProfileContext } from '../context/UserProfileContext';
-import { useInvoices } from '../hooks/useInvoices';
+import { useInvoices, Invoice } from '../hooks/useInvoices';
 import { toast } from 'react-hot-toast';
-import { getUserIdToNameMap } from '../utils/userIdToNameMap';
 
 export default function InvoicePage() {
-  const { user } = useAuth();
   const { profile, loading: loadingProfile } = useUserProfileContext();
-  const [filters, setFilters] = useState({ date_off: '' });
-  const [pendingFilters, setPendingFilters] = useState({ date_off: '' });
-  const [userMap, setUserMap] = useState<Record<string, string>>({});
+  interface InvoiceFilters {
+    date_off: string;
+    invoice_number: string;
+  }
+
+  const [filters, setFilters] = useState<Partial<Invoice>>({});
+  const [pendingFilters, setPendingFilters] = useState<Partial<Invoice>>({ date_off: '', invoice_number: '' });
   const [page, setPage] = useState(1);
   const pageSize = 10;
   const {
@@ -24,12 +25,8 @@ export default function InvoicePage() {
     page: currentPage,
     pageSize: currentPageSize,
     setPage: setPageFromHook
-  } = useInvoices(undefined, filters, page, pageSize);
+  } = useInvoices(profile?.id, filters, page, pageSize);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    getUserIdToNameMap().then(setUserMap);
-  }, []);
 
   const handleDelete = async (id: string) => {
     if (window.confirm('¿Seguro que deseas eliminar esta factura?')) {
@@ -41,7 +38,12 @@ export default function InvoicePage() {
 
   const handleFilter = (e: React.FormEvent) => {
     e.preventDefault();
-    setFilters({ ...pendingFilters });
+    // Create a new filters object with only non-empty values
+    const newFilters: Partial<Invoice> = {};
+    if (pendingFilters.date_off) newFilters.date_off = pendingFilters.date_off;
+    if (pendingFilters.invoice_number) newFilters.invoice_number = pendingFilters.invoice_number;
+    
+    setFilters(newFilters);
     setPage(1);
     setPageFromHook(1);
   };
@@ -57,47 +59,61 @@ export default function InvoicePage() {
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold shadow-sm flex items-center gap-2 text-sm transition-colors"
             onClick={() => navigate('/facturas/crear')}
           >
-            + Nueva Factura
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Factura
           </button>
         </div>
         {/* Filtro por fecha */}
         <form onSubmit={handleFilter} className="bg-white p-4 rounded-xl shadow-md border border-gray-200 mb-6 flex flex-col md:flex-row items-end gap-4 justify-center md:justify-center w-full">
-  <div className="flex-1 w-full md:w-auto max-w-xs">
-    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-    <input
-      type="date"
-      value={pendingFilters.date_off}
-      onChange={e => setPendingFilters(f => ({ ...f, date_off: e.target.value }))}
-      className="border border-gray-400 rounded px-2 py-1 w-full sm:text-sm focus:ring-2 focus:ring-blue-500 transition text-gray-700 max-w-[170px]"
-      style={{ minHeight: 32, maxWidth: 170 }}
-    />
-  </div>
-  <div className="flex flex-row gap-2 items-end">
-    <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 shadow btn-xs flex items-center gap-1" style={{ minHeight: 32 }}>
-      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-      Filtrar
-    </button>
-    {(filters.date_off) && (
-      <button
-        type="button"
-        className="flex items-center gap-1 px-2 py-1 rounded border border-gray-300 bg-gray-100 text-xs text-gray-700 hover:bg-gray-200 transition btn-xs"
-        style={{ minHeight: 32, height: 32 }}
-        title="Limpiar filtros"
-        onClick={() => {
-          setFilters({ date_off: '' });
-          setPendingFilters({ date_off: '' });
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-        Limpiar filtros
-      </button>
-    )}
-  </div>
-</form>
+          <div className="flex-1 w-full md:w-auto max-w-xs">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Número de Factura</label>
+            <input
+              type="text"
+              placeholder="Buscar por número"
+              value={pendingFilters.invoice_number}
+              onChange={e => setPendingFilters(f => ({ ...f, invoice_number: e.target.value }))}
+              className="border border-gray-400 rounded px-2 py-1 w-full sm:text-sm focus:ring-2 focus:ring-blue-500 transition text-gray-700"
+              style={{ minHeight: 32, minWidth: 170 }}
+            />
+          </div>
+          <div className="flex-1 w-full md:w-auto max-w-xs">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Corte</label>
+            <input
+              type="date"
+              value={pendingFilters.date_off}
+              onChange={e => setPendingFilters(f => ({ ...f, date_off: e.target.value }))}
+              className="border border-gray-400 rounded px-2 py-1 w-full sm:text-sm focus:ring-2 focus:ring-blue-500 transition text-gray-700"
+              style={{ minHeight: 32, minWidth: 170 }}
+            />
+          </div>
+          <div className="flex flex-row gap-2 items-end">
+            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold shadow-sm flex items-center gap-2 text-sm transition-colors" style={{ minHeight: 32 }}>
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Buscar
+            </button>
+            {(filters.date_off || filters.invoice_number) && (
+              <button
+                type="button"
+                className="flex items-center gap-1 px-2 py-1 rounded border border-gray-300 bg-gray-100 text-xs text-gray-700 hover:bg-gray-200 transition btn-xs"
+                style={{ minHeight: 32, height: 32 }}
+                title="Limpiar filtros"
+                onClick={() => {
+                  setFilters({});
+                  setPendingFilters({ date_off: '', invoice_number: '' });
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        </form>
         <div className="bg-white p-4 rounded-xl shadow-md border border-gray-200">
           {invoices.length === 0 ? (
             <div className="border rounded p-4 text-center text-gray-400">No hay facturas registradas aún.</div>
@@ -107,7 +123,8 @@ export default function InvoicePage() {
                 <tr>
                   <th className="px-4 py-2">Número</th>
                   <th className="px-4 py-2">Cuenta</th>
-                  <th className="px-4 py-2">Fecha de Emisión</th>
+                  <th className="px-4 py-2">Fecha de Corte</th>
+                  <th className="px-4 py-2 text-right">Total</th>
                   <th className="px-4 py-2">Acciones</th>
                 </tr>
               </thead>
@@ -116,36 +133,40 @@ export default function InvoicePage() {
                   <tr key={inv.id} className="hover:bg-gray-50">
                     <td className="px-4 py-2">{inv.invoice_number}</td>
                     <td className="px-4 py-2">{inv.account_name}</td>
-                    <td className="px-4 py-2">{inv.date_off}</td>
-                    <td className="px-4 py-2 flex gap-2">
-  <button
-    className="text-blue-600 hover:bg-blue-50 rounded-full p-1"
-    title="Ver"
-    onClick={() => navigate(`/facturas/detalle/${inv.id}`, { state: { invoice: inv } })}
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zm6 0c0 5-7 9-9 9s-9-4-9-9 7-9 9-9 9 4 9 9z" />
-    </svg>
-  </button>
-  <button
-    className="text-yellow-600 hover:bg-yellow-50 rounded-full p-1"
-    title="Editar"
-    onClick={() => navigate(`/facturas/editar/${inv.id}`, { state: { invoice: inv } })}
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.21l-4 1 1-4 12.362-12.723z" />
-    </svg>
-  </button>
-  <button
-    className="text-red-600 hover:bg-red-50 rounded-full p-1"
-    title="Eliminar"
-    onClick={() => handleDelete(inv.id)}
-  >
-    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  </button>
-</td>
+                    <td className="px-4 py-2 text-center">{inv.date_off}</td>
+                    <td className="px-4 py-2 text-right font-medium">
+                      {inv.total !== undefined ? `$${inv.total.toLocaleString('es-CO')}` : '-'}
+                    </td>
+                    <td className="px-4 py-2 text-sm text-center">
+                      <button
+                        className="text-blue-600 hover:bg-blue-50 rounded-full p-1"
+                        title="Ver"
+                        onClick={() => navigate(`/facturas/detalle/${inv.id}`, { state: { invoice: inv } })}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                      </button>
+                      <button
+                        className="text-yellow-600 hover:bg-yellow-50 rounded-full p-1"
+                        title="Editar"
+                        onClick={() => navigate(`/facturas/editar/${inv.id}`, { state: { invoice: inv } })}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.21l-4 1 1-4 12.362-12.723z" />
+                        </svg>
+                      </button>
+                      <button
+                        className="text-red-600 hover:bg-red-50 rounded-full p-1"
+                        title="Eliminar"
+                        onClick={() => handleDelete(inv.id)}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

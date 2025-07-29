@@ -13,6 +13,7 @@ export interface Invoice {
   address: string;
   date_off: string;
   created_at?: string;
+  total?: number; // Total calculado (horas * tarifa)
 }
 
 export function useInvoices(
@@ -28,6 +29,20 @@ export function useInvoices(
   const [currentPage, setPage] = useState(page);
   const [currentPageSize] = useState(pageSize);
 
+  // Función para calcular el total de una factura (horas * tarifa)
+  const calculateInvoiceTotal = async (invoiceId: string): Promise<number> => {
+    const { data: hoursWorked, error } = await supabase
+      .from('hours_worked')
+      .select('hours, rate_hour')
+      .eq('invoice_id', invoiceId);
+      
+    if (error || !hoursWorked) return 0;
+    
+    return hoursWorked.reduce((total, hw) => {
+      return total + (hw.hours * (hw.rate_hour || 0));
+    }, 0);
+  };
+
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -40,8 +55,22 @@ export function useInvoices(
     }
     query = query.range((currentPage - 1) * currentPageSize, currentPage * currentPageSize - 1);
     const { data, error, count } = await query;
-    if (error) setError(error.message);
-    setInvoices(data || []);
+    
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+    
+    // Calcular el total para cada factura
+    const invoicesWithTotals = await Promise.all(
+      (data || []).map(async (invoice) => {
+        const total = await calculateInvoiceTotal(invoice.id);
+        return { ...invoice, total };
+      })
+    );
+    
+    setInvoices(invoicesWithTotals);
     setTotalCount(count || 0);
     setLoading(false);
   }, [userId, filters, currentPage, currentPageSize]);
@@ -60,9 +89,30 @@ export function useInvoices(
     else fetchInvoices();
   };
   const deleteInvoice = async (id: string) => {
-    const { error } = await supabase.from('invoices').delete().eq('id', id);
-    if (error) setError(error.message);
-    else fetchInvoices();
+    try {
+      // Primero, actualizar las horas trabajadas asociadas para establecer invoice_id a null
+      const { error: updateError } = await supabase
+        .from('hours_worked')
+        .update({ invoice_id: null })
+        .eq('invoice_id', id);
+      
+      if (updateError) throw updateError;
+      
+      // Luego, eliminar la factura
+      const { error: deleteError } = await supabase
+        .from('invoices')
+        .delete()
+        .eq('id', id);
+      
+      if (deleteError) throw deleteError;
+      
+      // Actualizar la lista de facturas
+      fetchInvoices();
+      
+    } catch (error: any) {
+      setError(error.message || 'Error al eliminar la factura');
+      throw error; // Relanzar el error para que el componente que llama pueda manejarlo si es necesario
+    }
   };
 
   return {
