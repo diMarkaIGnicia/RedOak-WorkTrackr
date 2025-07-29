@@ -37,11 +37,10 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `role`: ENUM('employee', 'administrator', ...)
 - `account_name`: TEXT 
 - `account_number`: TEXT
-- `bsb`: TEXT (opcional)
-- `abn`: TEXT (opcional)
-- `mobile_number`: TEXT (opcional)
-- `address`: TEXT (opcional)
-- `date_off`: DATE
+- `bsb`: TEXT
+- `abn`: TEXT
+- `mobile_number`: TEXT
+- `address`: TEXT
 - `auth_user_id`: UUID (FK a auth.users)
 - `created_at`: TIMESTAMP
 

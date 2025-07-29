@@ -146,7 +146,9 @@ export const HoursWorkedForm: React.FC<HoursWorkedFormProps & { role: string }> 
             value={form.hours}
             onChange={handleChange}
             min={0}
-            step={0.1}
+            step={0.01}
+            inputMode="decimal"
+            pattern="^\d+(\.\d{1,2})?$"
             required
             onFocus={e => e.target.select()}
           />

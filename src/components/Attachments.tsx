@@ -19,8 +19,8 @@ const BUCKET = 'reports';
 const FOLDER = 'attachments';
 
 const Attachments: React.FC<AttachmentsProps> = ({ reportId, readOnly }) => {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previews, setPreviews] = useState<{file: File, url: string}[]>([]);
   const [uploading, setUploading] = useState(false);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [error, setError] = useState('');
@@ -55,54 +55,87 @@ const Attachments: React.FC<AttachmentsProps> = ({ reportId, readOnly }) => {
     fetchAttachments();
   }, [reportId]);
 
-  // Previsualización al seleccionar archivo
+  // Previsualización al seleccionar archivos
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    setSelectedFile(file || null);
+    const files = Array.from(e.target.files || []);
+    setSelectedFiles(files);
     setError('');
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setPreview(reader.result as string);
-      reader.readAsDataURL(file);
-    } else {
-      setPreview(null);
-    }
+    
+    // Create previews for all selected files
+    const newPreviews = files.map(file => {
+      const url = URL.createObjectURL(file);
+      return { file, url };
+    });
+    
+    setPreviews(newPreviews);
   };
 
-  // Subir archivo al storage y guardar en DB
+  // Subir archivos al storage y guardar en DB
   const handleUpload = async () => {
-    if (!selectedFile || !reportId) return;
+    if (selectedFiles.length === 0 || !reportId) return;
     setUploading(true);
     setError('');
+    
     try {
-      const ext = selectedFile.name.split('.').pop();
-      const filePath = `${FOLDER}/${reportId}/${crypto.randomUUID()}.${ext}`;
-      const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(filePath, selectedFile, { upsert: false });
-      if (uploadErr) throw uploadErr;
-      // Guardar registro en tabla
-      const { data, error: dbErr } = await supabase.from('report_attachments').insert({
-        report_id: reportId,
-        path: filePath,
-        file_type: selectedFile.type,
-      }).select();
-      if (dbErr) throw dbErr;
-      // Obtener URL firmada
-      const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(filePath, 60 * 60);
-      setAttachments(prev => [
-        ...prev,
-        {
-          id: data?.[0]?.id,
-          report_id: reportId,
-          path: filePath,
-          file_type: selectedFile.type,
-          fileUrl: signed?.signedUrl || '',
-        },
-      ]);
-      setSelectedFile(null);
-      setPreview(null);
-      toast.success('Archivo cargado correctamente');
+      const newAttachments: Attachment[] = [];
+      
+      // Process each file
+      for (const file of selectedFiles) {
+        try {
+          const ext = file.name.split('.').pop();
+          const filePath = `${FOLDER}/${reportId}/${crypto.randomUUID()}.${ext}`;
+          
+          // Upload to storage
+          const { error: uploadErr } = await supabase.storage
+            .from(BUCKET)
+            .upload(filePath, file, { upsert: false });
+          
+          if (uploadErr) throw uploadErr;
+          
+          // Save to database
+          const { data, error: dbErr } = await supabase
+            .from('report_attachments')
+            .insert({
+              report_id: reportId,
+              path: filePath,
+              file_type: file.type,
+            })
+            .select();
+            
+          if (dbErr) throw dbErr;
+          
+          // Get signed URL
+          const { data: signed } = await supabase.storage
+            .from(BUCKET)
+            .createSignedUrl(filePath, 60 * 60);
+            
+          newAttachments.push({
+            id: data?.[0]?.id,
+            report_id: reportId,
+            path: filePath,
+            file_type: file.type,
+            fileUrl: signed?.signedUrl || '',
+          });
+          
+        } catch (err: any) {
+          console.error('Error uploading file:', err);
+          toast.error(`Error al cargar ${file.name}: ${err?.message || 'Error desconocido'}`);
+        }
+      }
+      
+      // Update attachments list
+      if (newAttachments.length > 0) {
+        setAttachments(prev => [...prev, ...newAttachments]);
+        toast.success(`${newAttachments.length} archivo(s) cargado(s) correctamente`);
+      }
+      
+      // Reset selection
+      setSelectedFiles([]);
+      setPreviews([]);
+      
     } catch (err: any) {
-      toast.error('Error al cargar el archivo: ' + (err?.message || ''));
+      console.error('Upload error:', err);
+      toast.error('Error al cargar los archivos: ' + (err?.message || ''));
     } finally {
       setUploading(false);
     }
@@ -120,6 +153,7 @@ const Attachments: React.FC<AttachmentsProps> = ({ reportId, readOnly }) => {
             accept="image/*,video/*"
             className="hidden"
             onChange={handleFileSelect}
+            multiple
             disabled={uploading}
           />
           <button
@@ -135,39 +169,78 @@ const Attachments: React.FC<AttachmentsProps> = ({ reportId, readOnly }) => {
             </svg>
             Seleccionar archivo
           </button>
-          {selectedFile && (
+          {selectedFiles.length > 0 && (
             <button
               type="button"
-              className="px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
+              className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
               onClick={handleUpload}
-              disabled={uploading}
+              disabled={uploading || selectedFiles.length === 0}
             >
               {uploading ? (
-                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
-                </svg>
+                <>
+                  <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                  </svg>
+                  <span>Subiendo...</span>
+                </>
               ) : (
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" fill="none" />
-                  <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="2" fill="none" />
-                  <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="2" />
-                </svg>
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" stroke="currentColor" strokeWidth="2" fill="none" />
+                    <polyline points="7 10 12 15 17 10" stroke="currentColor" strokeWidth="2" fill="none" />
+                    <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                  <span>{selectedFiles.length > 0 ? `Subir ${selectedFiles.length} archivo(s)` : 'Subir'}</span>
+                </>
               )}
-              Cargar
             </button>
           )}
         </div>
       )}
-      {/* Preview */}
-      {preview && (
-        <div className="mb-2">
-          {selectedFile?.type.startsWith('image') ? (
-            <img src={preview} alt="preview" className="w-24 h-24 object-cover rounded shadow" />
-          ) : selectedFile?.type.startsWith('video') ? (
-            <video src={preview} controls className="w-24 h-24 object-cover rounded shadow" />
-          ) : null}
-          <div className="text-xs text-gray-500 mt-1">{selectedFile?.name}</div>
+      {/* Previews */}
+      {previews.length > 0 && (
+        <div className="mb-4">
+          <p className="text-sm text-gray-600 mb-2">Archivos seleccionados ({previews.length}):</p>
+          <div className="flex flex-wrap gap-4">
+            {previews.map((preview, index) => (
+              <div key={index} className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newPreviews = [...previews];
+                    const newFiles = [...selectedFiles];
+                    newPreviews.splice(index, 1);
+                    newFiles.splice(index, 1);
+                    setPreviews(newPreviews);
+                    setSelectedFiles(newFiles);
+                  }}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
+                  title="Eliminar"
+                >
+                  ×
+                </button>
+                {preview.file.type.startsWith('image') ? (
+                  <img 
+                    src={preview.url} 
+                    alt={`Vista previa ${index + 1}`} 
+                    className="w-24 h-24 object-cover rounded shadow" 
+                  />
+                ) : preview.file.type.startsWith('video') ? (
+                  <video 
+                    src={preview.url} 
+                    controls 
+                    className="w-24 h-24 object-cover rounded shadow" 
+                  />
+                ) : (
+                  <div className="w-24 h-24 bg-gray-100 rounded shadow flex items-center justify-center">
+                    <span className="text-xs text-gray-500">{preview.file.name}</span>
+                  </div>
+                )}
+                <div className="text-xs text-gray-500 mt-1 truncate w-24">{preview.file.name}</div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       {/* Miniaturas */}
