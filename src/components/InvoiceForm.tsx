@@ -13,6 +13,7 @@ export interface InvoiceFormValues {
   account_name: string;
   account_number: string;
   bsb: string;
+  bank_name: string;
   abn: string;
   mobile_number: string;
   status?: InvoiceStatus;

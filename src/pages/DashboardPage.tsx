@@ -207,19 +207,6 @@ const DashboardPage: React.FC = () => {
           <div>
             <h1 className="text-3xl font-montserrat font-bold mb-2">Bienvenido de nuevo</h1>
             <h2 className="text-lg font-montserrat font-normal mb-6">Este es el resumen de tu Empleados</h2>
-            <div className="mb-4">
-              <label htmlFor="rango" className="mr-2 font-montserrat font-normal">Filtrar por rango:</label>
-              <select
-                id="rango"
-                value={rango}
-                onChange={e => setRango(e.target.value)}
-                className="border rounded px-2 py-1"
-              >
-                {opcionesRango.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {empleados.map(emp => (
                 <EmployeeCard

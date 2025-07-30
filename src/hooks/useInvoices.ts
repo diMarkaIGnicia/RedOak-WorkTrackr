@@ -1,20 +1,31 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
 
+export interface HoursWorked {
+  id: string;
+  hours: number;
+  rate_hour: number;
+  description?: string;
+  date_worked: string;
+}
+
 export interface Invoice {
   id: string;
   invoice_number: string;
   user_id: string;
-  account_name: string;
-  account_number: string;
-  bsb: string;
-  abn: string;
-  mobile_number: string;
-  address: string;
-  date_off: string;
+  account_name?: string;
+  account_number?: string;
+  abn?: string;
+  mobile_number?: string;
+  address?: string;
+  bank_name?: string;
+  account_type?: string;
+  account_holder?: string;
   created_at?: string;
+  updated_at?: string;
   status?: string;
-  total?: number; // Total calculado (horas * tarifa)
+  total?: number;
+  hours_worked?: HoursWorked[];
 }
 
 export function useInvoices(
@@ -44,10 +55,21 @@ export function useInvoices(
     }, 0);
   };
 
+  const fetchInvoiceWithHours = async (invoiceId: string) => {
+    const { data: hoursWorked } = await supabase
+      .from('hours_worked')
+      .select('*')
+      .eq('invoice_id', invoiceId);
+    
+    return hoursWorked || [];
+  };
+
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
     setError(null);
-    let query = supabase.from('invoices').select('*', { count: 'exact' });
+    let query = supabase
+      .from('invoices')
+      .select('*', { count: 'exact' });
     if (userId) query = query.eq('user_id', userId);
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -63,15 +85,23 @@ export function useInvoices(
       return;
     }
     
-    // Calcular el total para cada factura
-    const invoicesWithTotals = await Promise.all(
+    // Obtener el total y las horas trabajadas para cada factura
+    const invoicesWithDetails = await Promise.all(
       (data || []).map(async (invoice) => {
-        const total = await calculateInvoiceTotal(invoice.id);
-        return { ...invoice, total };
+        const [total, hoursWorked] = await Promise.all([
+          calculateInvoiceTotal(invoice.id),
+          fetchInvoiceWithHours(invoice.id)
+        ]);
+        
+        return { 
+          ...invoice, 
+          total,
+          hours_worked: hoursWorked
+        };
       })
     );
     
-    setInvoices(invoicesWithTotals);
+    setInvoices(invoicesWithDetails);
     setTotalCount(count || 0);
     setLoading(false);
   }, [userId, filters, currentPage, currentPageSize]);
