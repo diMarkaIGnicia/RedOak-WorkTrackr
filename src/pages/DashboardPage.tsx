@@ -224,6 +224,7 @@ const DashboardPage: React.FC = () => {
               {empleados.map(emp => (
                 <EmployeeCard
                   key={emp.id}
+                  userId={emp.id}
                   nombre={emp.full_name}
                   photo_url={emp.photo_url}
                   tareas={emp.tareas}

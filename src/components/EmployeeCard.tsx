@@ -7,28 +7,35 @@ interface Task {
 
 interface EmployeeCardProps {
   nombre: string;
-  photo_url: string;
+  photo_url?: string | null;
   tareas: Task[];
+  userId: string;
 }
 
-export const EmployeeCard: React.FC<EmployeeCardProps> = ({ nombre, photo_url, tareas }) => {
+export const EmployeeCard: React.FC<EmployeeCardProps> = ({ nombre, photo_url, tareas, userId }) => {
   const tareasCompletadas = tareas.length;
   const horasTrabajadas = tareas.reduce((acc, t) => acc + (t.horas_trabajadas || 0), 0);
+  const photoUrl = photo_url || '/avatar-placeholder.jpg';
 
   return (
     <div className="flex items-center bg-white rounded-xl shadow border px-4 py-3 gap-4 max-w-md w-full">
       <div className="relative">
         <img
-          src={photo_url || '/avatar-placeholder.png'}
+          src={photoUrl}
           alt={nombre}
           className="w-14 h-14 rounded-full object-cover border-2 border-gray-200"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.src = '/avatar-placeholder.jpg';
+          }}
         />
         <span className="absolute bottom-1 left-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full" title="Activo" />
       </div>
       <div className="flex flex-col justify-center">
         <div className="font-bold text-lg leading-tight">{nombre}</div>
-        <div className="text-gray-600 text-sm">Tareas Realizadas: {tareasCompletadas}</div>
-        <div className="text-gray-600 text-sm">Horas Trabajadas: {horasTrabajadas}</div>
+        <div className="text-gray-600 text-sm">Por Pagar: {tareasCompletadas}</div>
+        <div className="text-gray-600 text-sm">Por Facturar: {horasTrabajadas}</div>
       </div>
     </div>
   );

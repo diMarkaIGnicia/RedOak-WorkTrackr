@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import { supabase } from '../services/supabaseClient';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function ProfilePage() {
   const { profile, refreshProfile } = useUserProfileContext();
@@ -20,6 +21,9 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Password change state
   const [passwordData, setPasswordData] = useState({
@@ -31,19 +35,49 @@ export default function ProfilePage() {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const navigate = useNavigate();
 
-  // Initialize form with profile data
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        full_name: profile.full_name || '',
-        account_name: profile.account_name || '',
-        account_number: profile.account_number || '',
-        bsb: profile.bsb || '',
-        abn: profile.abn || '',
-        mobile_number: profile.mobile_number || '',
-        address: profile.address || ''
-      });
+  // Function to load profile photo
+  const loadProfilePhoto = async (photoPath: string) => {
+    try {
+      const { data: signedUrl, error } = await supabase.storage
+        .from('profile-photos')
+        .createSignedUrl(photoPath, 3600); // URL expires in 1 hour
+      
+      if (error) throw error;
+      if (signedUrl) {
+        setPhotoPreview(signedUrl.signedUrl);
+      } else {
+        setPhotoPreview('/avatar-placeholder.jpg');
+      }
+    } catch (error) {
+      console.error('Error loading profile photo:', error);
+      setPhotoPreview('/avatar-placeholder.jpg');
     }
+  };
+
+  // Initialize form with profile data and photo preview
+  useEffect(() => {
+    const initializeProfile = async () => {
+      if (profile) {
+        setFormData({
+          full_name: profile.full_name || '',
+          account_name: profile.account_name || '',
+          account_number: profile.account_number || '',
+          bsb: profile.bsb || '',
+          abn: profile.abn || '',
+          mobile_number: profile.mobile_number || '',
+          address: profile.address || ''
+        });
+        
+        // Load profile photo if it exists
+        if (profile.photo_path) {
+          await loadProfilePhoto(profile.photo_path);
+        } else {
+          setPhotoPreview('/avatar-placeholder.jpg');
+        }
+      }
+    };
+    
+    initializeProfile();
   }, [profile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -52,6 +86,81 @@ export default function ProfilePage() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handlePhotoUpload = async (file: File) => {
+    if (!profile?.id) return;
+    
+    setIsUploadingPhoto(true);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${profile.id}.${fileExt}`;
+    const filePath = `${fileName}`;
+
+    try {
+      // Upload the file to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Update user profile with the new photo path
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ photo_path: filePath })
+        .eq('id', profile.id);
+
+      if (updateError) throw updateError;
+
+      // Get a signed URL for the uploaded photo
+      const { data: signedUrl } = await supabase.storage
+        .from('profile-photos')
+        .createSignedUrl(filePath, 3600); // URL expires in 1 hour
+      
+      if (signedUrl) {
+        setPhotoPreview(signedUrl.signedUrl);
+      }
+      await refreshProfile();
+    } catch (error: any) {
+      console.error('Error uploading photo:', error);
+      setError(error.message || 'Error al subir la foto');
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check file type
+    if (!file.type.match('image.*')) {
+      setError('Por favor, sube un archivo de imagen válido');
+      return;
+    }
+
+    // Check file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('La imagen no puede ser mayor a 5MB');
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload the file
+    handlePhotoUpload(file);
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,6 +285,52 @@ export default function ProfilePage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+          </div>
+
+          {/* Profile Photo */}
+          <div className="flex flex-col items-center mb-8">
+            <div className="relative group">
+              <img
+                src={photoPreview || '/avatar-placeholder.png'}
+                alt="Profile"
+                className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                onError={(e) => {
+                  // Fallback to placeholder if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.onerror = null;
+                  target.src = '/avatar-placeholder.png';
+                }}
+              />
+              <button
+                type="button"
+                onClick={triggerFileInput}
+                disabled={isUploadingPhoto}
+                className="absolute inset-0 w-full h-full flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+              >
+                {isUploadingPhoto ? (
+                  <svg className="animate-spin h-8 w-8 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              accept="image/*"
+              className="hidden"
+              capture="user"
+            />
+            <p className="mt-2 text-sm text-gray-500">
+              Haz clic en la imagen para cambiar la foto
+            </p>
           </div>
 
           {error && (

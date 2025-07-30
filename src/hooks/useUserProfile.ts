@@ -5,7 +5,7 @@ export interface UserProfile {
   id: string;
   full_name: string;
   role: string;
-  photo_url?: string;
+  photo_path?: string;
   account_name?: string;
   account_number?: string;
   bsb?: string;
