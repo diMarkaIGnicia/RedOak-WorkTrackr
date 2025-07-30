@@ -8,10 +8,10 @@ export interface HoursWorked {
   customer_id: string;
   customer_name?: string; // nombre completo del cliente
   type_work: string;
+  type_work_other?: string;
   rate_hour: number;
   hours: number;
   description: string;
-  state: string;
   created_at: string;
   invoice_id?: string | null; // id de la factura asociada (opcional)
 }
@@ -21,7 +21,6 @@ export function useHoursWorked(
   filters?: {
     date_worked?: string;
     customer_id?: string;
-    state?: string;
     invoice_id?: string | null;
   },
   page: number = 1,
@@ -55,9 +54,6 @@ export function useHoursWorked(
       } else {
         query = query.ilike('customer_id', `%${filters.customer_id}%`);
       }
-    }
-    if (filters?.state) {
-      query = query.eq('state', filters.state);
     }
     if (filters?.invoice_id === null) {
       // Solo horas sin factura asociada

@@ -2,7 +2,6 @@ import React from 'react';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { HoursWorkedForm, HoursWorkedFormValues } from '../components/HoursWorkedForm';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import { useHoursWorked } from '../hooks/useHoursWorked';
 import { supabase } from '../services/supabaseClient';
@@ -11,7 +10,6 @@ import { toast } from 'react-hot-toast';
 export default function HoursWorkedEditPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
   const { profile, loading: loadingProfile } = useUserProfileContext();
   const { addHoursWorked, updateHoursWorked } = useHoursWorked(profile?.id);
 
@@ -34,7 +32,6 @@ export default function HoursWorkedEditPage() {
         type_work_other: values.type_work_other,
         hours: values.hours,
         rate_hour: values.rate_hour,
-        state: (profile.role === 'administrator') ? values.state : 'Creada',
         user_id: profile.id,
       };
       if (hoursWorked && hoursWorked.id) {

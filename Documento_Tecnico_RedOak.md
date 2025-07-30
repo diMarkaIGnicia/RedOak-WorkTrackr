@@ -70,7 +70,6 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `hours`: DECIMAL
 - `rate_hour`: DECIMAL
 - `descripcion`: TEXT (opcional)
-- `state`: ENUM('Creada', 'Enviada', 'Pagada') (solo visible al admin)
 - `location`: GEOJSON o JSONB
 - `created_at`: TIMESTAMP default now()
 - `invoice_id`: UUID (FK a facturas)

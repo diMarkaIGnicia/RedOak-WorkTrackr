@@ -6,22 +6,18 @@ import { useNavigate } from 'react-router-dom';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import Toast from '../components/Toast';
 
-const ESTADOS = ['Creada', 'Enviada', 'Pagada'];
-
 export default function HoursWorkedPage() {
   const navigate = useNavigate();
   const { profile, loading: loadingProfile } = useUserProfileContext();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
     date_worked: '',
-    customer_id: '',
-    status: '',
+    customer_id: ''
   });
   // Estado temporal para los inputs de filtro
   const [pendingFilters, setPendingFilters] = useState({
     date_worked: '',
     customer_id: '',
-    status: '',
   });
   const [page, setPage] = useState(1);
   const pageSize = 10;
@@ -108,19 +104,6 @@ export default function HoursWorkedPage() {
               />
             </div>
 
-            {/* Filtro Estado */}
-            <div className="flex-1 w-full md:w-auto">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select
-                value={pendingFilters.status}
-                onChange={e => setPendingFilters(f => ({ ...f, status: e.target.value }))}
-                className="border border-gray-400 rounded px-2 py-1 w-full sm:text-sm"
-              >
-                <option value="">Todos</option>
-                {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
-              </select>
-            </div>
-
             {/* Botones */}
             <div className="flex items-center gap-2">
               <button
@@ -132,14 +115,14 @@ export default function HoursWorkedPage() {
                 </svg>
                 Buscar
               </button>
-              {(filters.date_worked || filters.customer_id || filters.status) && (
+              {(filters.date_worked || filters.customer_id) && (
                 <button
                   className="ml-auto flex items-center gap-1 px-2 py-1 rounded border border-gray-300 bg-gray-100 text-xs text-gray-700 hover:bg-gray-200 transition btn-xs"
                   style={{ minHeight: 0, height: 28 }}
                   title="Limpiar filtros"
                   onClick={() => {
-                    setFilters({ date_worked: '', customer_id: '', status: '' });
-                    setPendingFilters({ date_worked: '', customer_id: '', status: '' });
+                    setFilters({ date_worked: '', customer_id: '' });
+                    setPendingFilters({ date_worked: '', customer_id: '' });
                   }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -159,7 +142,7 @@ export default function HoursWorkedPage() {
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Cliente</th>
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Tipo de Trabajo</th>
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Horas Trabajadas</th>
-                <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Estado</th>
+                <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Total</th>
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-center">Acciones</th>
               </tr>
             </thead>
@@ -180,16 +163,7 @@ export default function HoursWorkedPage() {
                     <td className="px-4 py-2 text-sm">{hoursWorked.customer_name || hoursWorked.customer_id}</td>
                     <td className="px-4 py-2 text-sm">{hoursWorked.type_work}</td>
                     <td className="px-4 py-2 text-sm">{hoursWorked.hours}</td>
-                    <td className="px-4 py-2 text-sm">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${hoursWorked.state === 'Pagada'
-                          ? 'bg-green-100 text-green-700'
-                          : hoursWorked.state === 'Enviada'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}>
-                        {hoursWorked.state}
-                      </span>
-                    </td>
+                    <td className="px-4 py-2 text-sm">$ {hoursWorked.hours * hoursWorked.rate_hour}</td>
                     <td className="px-4 py-2 text-sm text-center">
                       <div className="flex justify-center gap-2">
                         <button
@@ -203,25 +177,32 @@ export default function HoursWorkedPage() {
                           </svg>
                         </button>
                         <button
-                          className="text-yellow-500 hover:bg-yellow-50 rounded-full p-1"
-                          title="Editar"
-                          onClick={() => navigate(`/horas-trabajadas/editar/${hoursWorked.id}`, {
-                            state: {
-                              hoursWorked: {
-                                id: hoursWorked.id,
-                                date_worked: hoursWorked.date_worked || '',
-                                customer_id: hoursWorked.customer_id || '',
-                                type_work: hoursWorked.type_work || '',
-                                type_work_other: hoursWorked.type_work_other || '',
-                                hours: typeof hoursWorked.hours === 'number' ? hoursWorked.hours : 0,
-                                rate_hour: typeof hoursWorked.rate_hour === 'number' ? hoursWorked.rate_hour : 0,
-                                state: hoursWorked.state || ''
-                              }
+                          className={`${hoursWorked.invoice_id ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-500 hover:bg-yellow-50'} rounded-full p-1`}
+                          title={hoursWorked.invoice_id ? 'No se puede editar - Tiene factura asociada' : 'Editar'}
+                          disabled={!!hoursWorked.invoice_id}
+                          onClick={(e) => {
+                            if (hoursWorked.invoice_id) {
+                              e.preventDefault();
+                              showToast('No se puede editar una hora trabajada que ya está asociada a una factura', 'warning');
+                              return;
                             }
-                          })}
+                            navigate(`/horas-trabajadas/editar/${hoursWorked.id}`, {
+                              state: {
+                                hoursWorked: {
+                                  id: hoursWorked.id,
+                                  date_worked: hoursWorked.date_worked || '',
+                                  customer_id: hoursWorked.customer_id || '',
+                                  type_work: hoursWorked.type_work || '',
+                                  type_work_other: hoursWorked.type_work_other || '',
+                                  hours: typeof hoursWorked.hours === 'number' ? hoursWorked.hours : 0,
+                                  rate_hour: typeof hoursWorked.rate_hour === 'number' ? hoursWorked.rate_hour : 0
+                                }
+                              }
+                            });
+                          }}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 3.487a2.25 2.25 0 113.182 3.182L7.5 19.21l-4 1 1-4 12.362-12.723z" />
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                           </svg>
                         </button>
                         <button

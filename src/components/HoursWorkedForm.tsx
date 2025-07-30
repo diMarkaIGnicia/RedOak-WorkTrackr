@@ -86,10 +86,6 @@ export const HoursWorkedForm: React.FC<HoursWorkedFormProps & { role: string }> 
       setError('Debes ingresar la tarifa por hora.');
       return;
     }
-    if (!form.state) {
-      setError('Debes seleccionar el estado.');
-      return;
-    }
     setError('');
     // Solo pasa los datos y adjuntos al padre; observaciones se pasan como tercer argumento
     // eslint-disable-next-line
@@ -172,14 +168,6 @@ export const HoursWorkedForm: React.FC<HoursWorkedFormProps & { role: string }> 
 
           </div>
         </div>
-        {role === 'administrator' && (
-          <div>
-            <label className="block text-sm font-medium mb-1">Estado <span className="text-red-500">*</span></label>
-            <select className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition" name="state" value={form.state} onChange={handleChange} required>
-              {ESTADOS.map(estado => <option key={estado} value={estado}>{estado}</option>)}
-            </select>
-          </div>
-        )}
       </div>
 
       {/* Total dinámico */}
