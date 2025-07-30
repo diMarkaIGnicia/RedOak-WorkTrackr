@@ -1,5 +1,6 @@
 // Import jsPDF
 import { jsPDF } from 'jspdf';
+import numWords from 'num-words';
 
 // Extend jsPDF type definitions if needed
 declare module 'jspdf' {
@@ -43,13 +44,14 @@ export const generateInvoicePdf = ({ invoice, profile }: GenerateInvoicePdfProps
   // Add TAX INVOICE TO section
   doc.setFont('helvetica', 'bold');
   doc.text('TAX INVOICE TO:', 20, 85);
-  doc.text('RedOak Cleaning Solutions', 20, 90);
-  doc.text('Mobile Number: 0491829501', 20, 95);
+  doc.setFont('helvetica', 'normal');
+  doc.text('RedOak Cleaning Solutions', 30, 95);
+  doc.text('Mobile Number: 0491829501', 30, 100);
   
   doc.setFont('helvetica', 'normal');
   
   // Start Y position for hours worked list
-  let currentY = 110;
+  let currentY = 120;
   let total = 0;
   
   // Add hours worked section title
@@ -60,24 +62,20 @@ export const generateInvoicePdf = ({ invoice, profile }: GenerateInvoicePdfProps
   currentY += 10;
   
   // Add hours worked as simple lines
-  // Note: This is a placeholder. In a real implementation, you would fetch the actual hours worked data
-  // using the invoice.hours_worked_ids and format each entry
-  if (invoice.hours_worked_ids && invoice.hours_worked_ids.length > 0) {
-    // This is a placeholder - in a real implementation, you would map through the actual hours
-    const hoursWorked = [
-      { date: '2023-07-15', hours: 8, rate: 25.5 },
-      { date: '2023-07-16', hours: 4, rate: 25.5 },
-      { date: '2023-07-17', hours: 8, rate: 25.5 }
-    ];
+  if (invoice.hours_worked && Array.isArray(invoice.hours_worked) && invoice.hours_worked.length > 0) {
+    // Sort hours by date
+    const sortedHours = [...invoice.hours_worked].sort((a, b) => 
+      new Date(a.date_worked).getTime() - new Date(b.date_worked).getTime()
+    );
     
-    hoursWorked.forEach(item => {
-      const date = new Date(item.date);
-      const monthName = date.toLocaleString('es-ES', { month: 'long' });
-      const formattedDate = `${date.getDate()} ${monthName.charAt(0).toUpperCase() + monthName.slice(1)}`;
-      const lineTotal = item.hours * item.rate;
+    sortedHours.forEach(hw => {
+      const date = new Date(hw.date_worked);
+      const monthName = date.toLocaleString('en-US', { month: 'long' });
+      const formattedDate = `${monthName.charAt(0).toUpperCase() + monthName.slice(1)} ${date.getDate()}`;
+      const lineTotal = hw.hours * hw.rate_hour;
       total += lineTotal;
       
-      const lineText = `${formattedDate}: ${item.hours} x $${item.rate.toFixed(2)} = $${lineTotal.toFixed(2)}`;
+      const lineText = `${formattedDate}: $${lineTotal.toFixed(2)}`;
       
       // Add line if it fits, otherwise add new page
       if (currentY > 250) { // Near bottom of page
@@ -85,38 +83,37 @@ export const generateInvoicePdf = ({ invoice, profile }: GenerateInvoicePdfProps
         currentY = 20;
       }
       
-      doc.text(lineText, 20, currentY);
+      doc.text(lineText, 30, currentY);
       currentY += 7; // Line height
     });
   } else {
     doc.text('No hay horas trabajadas registradas', 20, currentY);
     currentY += 7;
   }
+  const words = numWords(total);
   
   // Add total
   currentY += 10; // Add some space before total
   doc.setFont('helvetica', 'bold');
-  doc.text(`Total: $${total.toFixed(2)}`, 20, currentY);
+  const wordsTotal =  `${words} AUD $${total.toFixed(2)}`;
+  const capitalized = wordsTotal.charAt(0).toUpperCase() + wordsTotal.slice(1);
+  doc.text(`Total: ${capitalized}`, 30, currentY);
   doc.setFont('helvetica', 'normal');
   
-  const finalY = currentY + 15; // Add some space after total
-  
-  // Add subtotal, tax, and total
-  const subtotalY = finalY + 10;
-  const taxY = subtotalY + 5;
-  const totalY = taxY + 15;
+  // Add total
+  const totalY = currentY + 20;
   
   doc.setFont('helvetica', 'bold');
   doc.text(`BANKING DETAILS:`, 20, totalY, { align: 'left' });
   doc.setFont('helvetica', 'normal');
   
   // Add payment info
-  const paymentY = totalY + 15;
+  const paymentY = totalY + 10;
   doc.setFontSize(9);
-  doc.text(`Account Name: ${invoice.account_name || profile?.full_name || ''}`, 20, paymentY);
-  doc.text(`Account Number: ${invoice.account_number || '12345678'}`, 20, paymentY + 5);
-  doc.text(`BSB: ${invoice.bsb || '033-000'}`, 20, paymentY + 10);
-  doc.text(`Bank: ${invoice.bank_name || 'Westpac'}`, 20, paymentY + 15);
+  doc.text(`Account Name: ${invoice.account_name || profile?.full_name || ''}`, 30, paymentY);
+  doc.text(`Account Number: ${invoice.account_number || ''}`, 30, paymentY + 5);
+  doc.text(`BSB: ${invoice.bsb || ''}`, 30, paymentY + 10);
+  doc.text(`Bank: ${invoice.bank || ''}`, 30, paymentY + 15);
   
   // Save the PDF
   doc.save(`invoice-${invoice.invoice_number || 'new'}.pdf`);

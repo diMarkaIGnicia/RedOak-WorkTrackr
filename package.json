@@ -13,6 +13,7 @@
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.50.4",
     "jspdf": "^3.0.1",
+    "num-words": "^1.2.3",
     "react-hot-toast": "^2.5.2",
     "react-router-dom": "^7.6.3",
     "rollup": "^4.44.2",

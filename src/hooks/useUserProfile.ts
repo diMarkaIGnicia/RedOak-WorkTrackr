@@ -10,6 +10,7 @@ export interface UserProfile {
   account_number?: string;
   bsb?: string;
   abn?: string;
+  bank?: string;
   mobile_number?: string;
   address?: string;
   email?: string;

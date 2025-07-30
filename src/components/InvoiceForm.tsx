@@ -6,6 +6,15 @@ import { useHoursWorked } from '../hooks/useHoursWorked';
 
 export type InvoiceStatus =  'Creada' | 'Enviada' | 'En Revisión' | 'Pagada';
 
+export interface HoursWorkedItem {
+  id: string;
+  date_worked: string;
+  hours: number;
+  rate_hour: number;
+  customer_name?: string;
+  customer_id?: string;
+}
+
 export interface InvoiceFormValues {
   id?: string;
   invoice_number: string;
@@ -13,13 +22,14 @@ export interface InvoiceFormValues {
   account_name: string;
   account_number: string;
   bsb: string;
-  bank_name: string;
+  bank: string;
   abn: string;
   mobile_number: string;
   status?: InvoiceStatus;
   address: string;
   date_off: string;
   hours_worked_ids?: string[]; // IDs de horas trabajadas asociadas
+  hours_worked?: HoursWorkedItem[]; // Datos completos de horas trabajadas
 }
 
 interface InvoiceFormProps {
@@ -62,6 +72,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
     account_number: safeInitialValues.current.account_number || profile?.account_number || '',
     bsb: safeInitialValues.current.bsb || profile?.bsb || '',
     abn: safeInitialValues.current.abn || profile?.abn || '',
+    bank: safeInitialValues.current.bank || profile?.bank || '',
     mobile_number: safeInitialValues.current.mobile_number || profile?.mobile_number || '',
     status: safeInitialValues.current.status || 'Creada',
     address: safeInitialValues.current.address || profile?.address || '',
@@ -79,6 +90,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
         account_number: profile.account_number || prev.account_number,
         bsb: profile.bsb || prev.bsb,
         abn: profile.abn || prev.abn,
+        bank: profile.bank || prev.bank,
         mobile_number: profile.mobile_number || prev.mobile_number,
         address: profile.address || prev.address,
       }));
@@ -204,6 +216,18 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
               </select>
             </div>
           )}
+        <div >
+          <label className="block text-sm font-medium mb-1">Banco <span className="text-red-500">*</span></label>
+          <input
+            type="text"
+            name="bank"
+            value={values.bank}
+            onChange={handleChange}
+            className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
+            disabled={readOnly}
+            required
+          />
+        </div>
         <div className="md:col-span-2">
           <label className="block text-sm font-medium mb-1">Dirección <span className="text-red-500">*</span></label>
           <input

@@ -14,6 +14,7 @@ export default function ProfilePage() {
     account_number: '',
     bsb: '',
     abn: '',
+    bank: '',
     mobile_number: '',
     address: ''
   });
@@ -64,6 +65,7 @@ export default function ProfilePage() {
           account_number: profile.account_number || '',
           bsb: profile.bsb || '',
           abn: profile.abn || '',
+          bank: profile.bank || '',
           mobile_number: profile.mobile_number || '',
           address: profile.address || ''
         });
@@ -177,6 +179,7 @@ export default function ProfilePage() {
           account_name: formData.account_name,
           account_number: formData.account_number,
           bsb: formData.bsb,
+          bank: formData.bank,
           abn: formData.abn,
           mobile_number: formData.mobile_number,
           address: formData.address,
@@ -427,6 +430,20 @@ export default function ProfilePage() {
                   id="abn"
                   name="abn"
                   value={formData.abn}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="bank" className="block text-sm font-medium text-gray-700">
+                  Banco
+                </label>
+                <input
+                  type="text"
+                  id="bank"
+                  name="bank"
+                  value={formData.bank}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
