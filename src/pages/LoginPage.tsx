@@ -14,17 +14,35 @@ const LoginPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
+      setLoading(false);
       if (error.message === 'Invalid login credentials') {
         setError('Credenciales inválidas, verifica tu correo y contraseña');
       } else {
         setError(error.message);
       }
-    } else {
-      navigate('/dashboard');
+      return;
     }
+    // Buscar usuario en tabla users por email
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id, active')
+      .eq('email', email)
+      .single();
+    setLoading(false);
+    if (userError) {
+      setError('No se pudo validar el estado del usuario.');
+      // Opcional: cerrar sesión si hay error
+      await supabase.auth.signOut();
+      return;
+    }
+    if (!userData?.active) {
+      setError('Tu usuario está inactivo. Contacta al administrador.');
+      await supabase.auth.signOut();
+      return;
+    }
+    navigate('/dashboard');
   };
 
   return (
