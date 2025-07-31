@@ -157,7 +157,7 @@ export default function InvoicePage() {
                     <td className="px-4 py-2">{inv.account_name}</td>
                     <td className="px-4 py-2 text-center">{inv.date_off}</td>
                     <td className="px-4 py-2 text-right font-medium">
-                      {inv.total !== undefined ? `$${inv.total.toLocaleString('es-CO')}` : '-'}
+                      {inv.total !== undefined ? `$${inv.total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-'}
                     </td>
                     <td className="px-4 py-2 text-center">{inv.status}</td>
                     <td className="px-4 py-2 text-sm text-center">

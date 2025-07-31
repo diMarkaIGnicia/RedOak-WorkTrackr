@@ -193,7 +193,7 @@ const DashboardPage: React.FC = () => {
                       </span>
                       <span className="flex items-center text-gray-700 text-sm">
                         <CurrencyDollarIcon className="w-4 h-4 mr-1" />
-                        {Number(hoursWorked.hours * hoursWorked.rate_hour).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        {Number(hoursWorked.hours * hoursWorked.rate_hour).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </div>
                   </div>

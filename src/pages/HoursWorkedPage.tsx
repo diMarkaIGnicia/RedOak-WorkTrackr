@@ -163,7 +163,9 @@ export default function HoursWorkedPage() {
                     <td className="px-4 py-2 text-sm">{hoursWorked.customer_name || hoursWorked.customer_id}</td>
                     <td className="px-4 py-2 text-sm">{hoursWorked.type_work}</td>
                     <td className="px-4 py-2 text-sm">{hoursWorked.hours}</td>
-                    <td className="px-4 py-2 text-sm">$ {hoursWorked.hours * hoursWorked.rate_hour}</td>
+                    <td className="px-4 py-2 text-sm text-right">
+                      $ {Number(hoursWorked.hours * hoursWorked.rate_hour).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
                     <td className="px-4 py-2 text-sm text-center">
                       <div className="flex justify-center gap-2">
                         <button

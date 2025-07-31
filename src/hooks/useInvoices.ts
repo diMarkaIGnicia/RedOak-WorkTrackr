@@ -25,6 +25,7 @@ export interface Invoice {
   updated_at?: string;
   status?: string;
   total?: number;
+  date_off?: string;
   hours_worked?: HoursWorked[];
 }
 

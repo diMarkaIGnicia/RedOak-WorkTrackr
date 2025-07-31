@@ -2,6 +2,41 @@
 import { jsPDF } from 'jspdf';
 import numWords from 'num-words';
 
+/**
+ * Converts a monetary amount to its English word representation
+ * @param amount - The amount in dollars (can be a float for dollars and cents)
+ * @returns String representation of the amount in words (e.g., "One hundred dollars and fifty cents")
+ */
+function amountToWords(amount: number): string {
+  // Handle invalid input
+  if (typeof amount !== 'number' || isNaN(amount)) {
+    return 'Zero dollars';
+  }
+
+  // Round to 2 decimal places to handle floating point precision
+  const roundedAmount = Math.round(amount * 100) / 100;
+  
+  // Split into dollars and cents
+  const [dollars, centsStr] = roundedAmount.toFixed(2).split('.');
+  const dollarsInt = parseInt(dollars, 10);
+  const centsInt = parseInt(centsStr, 10);
+
+  // Convert to words
+  const dollarText = numWords(dollarsInt);
+  const centText = centsInt > 0 ? numWords(centsInt) : '';
+
+  // Build the result string
+  let result = `${dollarText} dollar${dollarsInt !== 1 ? 's' : ''}`;
+
+  // Add cents if present
+  if (centsInt > 0) {
+    result += ` and ${centText} cent${centsInt !== 1 ? 's' : ''}`;
+  }
+
+  // Capitalize the first letter
+  return result.charAt(0).toUpperCase() + result.slice(1);
+}
+
 // Extend jsPDF type definitions if needed
 declare module 'jspdf' {
   interface jsPDF {
@@ -90,14 +125,23 @@ export const generateInvoicePdf = ({ invoice, profile }: GenerateInvoicePdfProps
     doc.text('No hay horas trabajadas registradas', 20, currentY);
     currentY += 7;
   }
-  const words = numWords(total);
+  // Convert total to words with error handling
+  let amountInWords = '';
+  try {
+    if (typeof total === 'number' && !isNaN(total)) {
+      amountInWords = `${amountToWords(total)} (AUD $${total.toFixed(2)})`;
+    } else {
+      amountInWords = `Total: $${total.toFixed(2)}`;
+    }
+  } catch (error) {
+    console.error('Error converting amount to words:', error);
+    amountInWords = `Total: $${total.toFixed(2)}`;
+  }
   
   // Add total
   currentY += 10; // Add some space before total
   doc.setFont('helvetica', 'bold');
-  const wordsTotal =  `${words} AUD $${total.toFixed(2)}`;
-  const capitalized = wordsTotal.charAt(0).toUpperCase() + wordsTotal.slice(1);
-  doc.text(`Total: ${capitalized}`, 30, currentY);
+  doc.text(`Total: ${amountInWords}`, 30, currentY);
   doc.setFont('helvetica', 'normal');
   
   // Add total
