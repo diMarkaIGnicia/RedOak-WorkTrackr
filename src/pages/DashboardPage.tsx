@@ -183,13 +183,18 @@ const DashboardPage: React.FC = () => {
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
-                        ${hoursWorked.state === 'Creada' ? 'bg-yellow-100 text-yellow-800' :
-                          hoursWorked.state === 'Pagada' ? 'bg-green-100 text-green-700' :
-                            hoursWorked.state === 'Enviada' ? 'bg-gray-200 text-gray-700' : ''}`}>
-                        {hoursWorked.state === 'Creada' && <LockClosedIcon className="w-4 h-4 mr-1" />}
-                        {hoursWorked.state === 'Pagada' && <CurrencyDollarIcon className="w-4 h-4 mr-1" />}
-                        {hoursWorked.state === 'Enviada' && <LockOpenIcon className="w-4 h-4 mr-1" />}
-                        {hoursWorked.state}
+  ${hoursWorked.invoice_id ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'}`}>
+                        {hoursWorked.invoice_id ? (
+                          <>
+                            <LockClosedIcon className="w-4 h-4 mr-1" />
+                            {hoursWorked.invoice_status ? hoursWorked.invoice_status : 'En factura'}
+                          </>
+                        ) : (
+                          <>
+                            <LockOpenIcon className="w-4 h-4 mr-1" />
+                            No está en una factura
+                          </>
+                        )}
                       </span>
                       <span className="flex items-center text-gray-700 text-sm">
                         <CurrencyDollarIcon className="w-4 h-4 mr-1" />
