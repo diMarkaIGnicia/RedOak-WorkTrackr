@@ -16,6 +16,7 @@ import InvoiceEditPage from '../pages/InvoiceEditPage';
 import InvoiceDetailPage from '../pages/InvoiceDetailPage';
 import ProfilePage from '../pages/ProfilePage';
 import UsersPage from '../pages/UsersPage';
+import UserEditPage from '../pages/UserEditPage';
 
 const AppRoutes: React.FC = () => {
   const { user, loading } = useAuth();
@@ -94,6 +95,16 @@ const AppRoutes: React.FC = () => {
         <Route path="/usuarios" element={
           <ProtectedRoute isAuth={!!user}>
             <UsersPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/usuarios/nuevo" element={
+          <ProtectedRoute isAuth={!!user}>
+            <UserEditPage />
+          </ProtectedRoute>
+        } />
+        <Route path="/usuarios/editar/:id" element={
+          <ProtectedRoute isAuth={!!user}>
+            <UserEditPage />
           </ProtectedRoute>
         } />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />

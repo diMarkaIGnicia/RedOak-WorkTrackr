@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import ActiveSwitch from '../components/ActiveSwitch';
 import ModuleTemplate from '../layouts/ModuleTemplate';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useUsers } from '../hooks/useUsers';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import { toast } from 'react-hot-toast';
@@ -48,25 +49,23 @@ export default function UsersPage() {
         <ModuleTemplate>
             <div className="max-w-6xl mx-auto py-8 px-2 sm:px-6">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold">Gestión de Usuarios</h1>
-                    <button
-                        title="Mostrar filtros"
-                        className="md:hidden bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg font-semibold shadow-sm flex items-center justify-center transition w-9 h-9"
-                        onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 4h18M7 12h10m-9 8h8" />
-                        </svg>
-                    </button>
-                    <button
-                        onClick={() => navigate('/usuarios/nuevo')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md font-semibold shadow-sm flex items-center gap-2 text-sm transition-colors"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <span>Usuario</span>
-                    </button>
+                    <h1 className="text-2xl font-bold text-gray-900">Usuarios</h1>
+                    <div className="flex space-x-3">
+                        <Link
+                            to="/usuarios/nuevo"
+                            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                        >
+                            <FiPlus className="-ml-1 mr-2 h-5 w-5" />
+                            Nuevo Usuario
+                        </Link>
+                        <button
+                            title="Mostrar filtros"
+                            className="md:hidden bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-lg font-semibold shadow-sm flex items-center justify-center transition w-9 h-9"
+                            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+                        >
+                            <FiFilter className="h-5 w-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Filtros */}
@@ -175,35 +174,23 @@ export default function UsersPage() {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <button
-                                                    type="button"
-                                                    className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${user.active ? 'bg-blue-600' : 'bg-gray-200'}`}
-                                                    role="switch"
-                                                    aria-checked={user.active}
-                                                    onClick={async () => {
-                                                        const newActiveState = !user.active;
-                                                        const result = await updateUserActiveStatus(user.id, newActiveState);
-                                                        if (result.success) {
-                                                            toast.success(`Usuario ${newActiveState ? 'activado' : 'desactivado'} correctamente`);
-                                                        } else {
-                                                            toast.error(result.error || 'Error al actualizar el estado del usuario');
-                                                        }
-                                                    }}
-                                                >
-                                                    <span className="sr-only">Activo</span>
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${user.active ? 'translate-x-5' : 'translate-x-0'}`}
-                                                    />
-                                                </button>
-                                            </div>
+                                            <ActiveSwitch
+                                                checked={user.active}
+                                                onChange={async (newActiveState) => {
+                                                    const result = await updateUserActiveStatus(user.id, newActiveState);
+                                                    if (result.success) {
+                                                        toast.success(`Usuario ${newActiveState ? 'activado' : 'desactivado'} correctamente`);
+                                                    } else {
+                                                        toast.error(result.error || 'Error al actualizar el estado del usuario');
+                                                    }
+                                                }}
+                                            />
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
                                             <button
                                                 className="text-yellow-500 hover:bg-yellow-50 rounded-full p-1"
                                                 title="Editar"
-                                                onClick={() => navigate(`/users/editar/${user.id}`, {
+                                                onClick={() => navigate(`/usuarios/editar/${user.id}`, {
                                                     state: {
                                                         user: {
                                                             id: user.id,
