@@ -16,6 +16,7 @@
     "num-words": "^1.2.3",
     "number-to-words": "^1.2.4",
     "react-hot-toast": "^2.5.2",
+    "react-icons": "^5.5.0",
     "react-router-dom": "^7.6.3",
     "rollup": "^4.44.2",
     "uuid": "^11.1.0"

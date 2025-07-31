@@ -3,7 +3,7 @@
 
 ## 🧾 Descripción General
 
-RedOak es una aplicación web (PWA) para la gestión de tareas y reportes laborales. Permite a empleados registrar sus tareas diarias y generar reportes, mientras que los administradores pueden visualizar, editar y exportar esta información. El sistema incluye control de acceso basado en roles, soporte multimedia, geolocalización, funcionalidad offline, y exportación a PDF.
+RedOak es una aplicación web (PWA) para la gestión de usuarios, registro de horas y reportes laborales. Permite a empleados registrar sus horas diarias y generar reportes, mientras que los administradores pueden visualizar, editar y exportar esta información. El sistema incluye control de acceso basado en roles, soporte multimedia, geolocalización, funcionalidad offline, y exportación a PDF.
 
 ---
 
@@ -14,7 +14,6 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - **PWA**: Instalación, offline mode, media capture
 - **Auth**: Supabase Auth con control de roles
 - **Media**: Captura desde cámara o carga desde dispositivo
-- **Geolocalización**: Integrada al crear tareas
 
 ---
 
@@ -45,6 +44,8 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 - `auth_user_id`: UUID (FK a auth.users)
 - `created_at`: TIMESTAMP default now()
 - `updated_at`: TIMESTAMP
+- `deleted_at`: TIMESTAMP
+- `active`: BOOLEAN default true
 
 ---
 
@@ -165,17 +166,16 @@ RedOak es una aplicación web (PWA) para la gestión de tareas y reportes labora
 
 ### Empleado
 1. Inicia sesión
-2. Registra tareas (adjunta media, ubicación, incidencias)
-3. Crea y edita reportes (si estado = "Creado")
-4. Visualiza tareas y reportes propios
+2. Registra horas trabajadas
+3. Crea reportes (adjunta media, ubicación, incidencias)
+4. Crea facturas agrupando las horas trabajadas
+5. Visualiza horas, reportes y facturas propios
 
 ### Administrador
 1. Inicia sesión
 2. Crea y administra usuarios
-3. Visualiza, edita y elimina tareas de todos
-4. Visualiza reportes en estado "Enviado"
-5. Exporta reportes a PDF
-6. Cambia estados de tareas y reportes
+3. Visualiza, edita y elimina horas, reportes y facturas de todos
+4. Cambia estados de horas, reportes y facturas
 
 ---
 
