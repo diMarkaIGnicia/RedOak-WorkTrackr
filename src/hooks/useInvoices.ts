@@ -42,28 +42,7 @@ export function useInvoices(
   const [currentPage, setPage] = useState(page);
   const [currentPageSize] = useState(pageSize);
 
-  // Función para calcular el total de una factura (horas * tarifa)
-  const calculateInvoiceTotal = async (invoiceId: string): Promise<number> => {
-    const { data: hoursWorked, error } = await supabase
-      .from('hours_worked')
-      .select('hours, rate_hour')
-      .eq('invoice_id', invoiceId);
-      
-    if (error || !hoursWorked) return 0;
-    
-    return hoursWorked.reduce((total, hw) => {
-      return total + (hw.hours * (hw.rate_hour || 0));
-    }, 0);
-  };
-
-  const fetchInvoiceWithHours = async (invoiceId: string) => {
-    const { data: hoursWorked } = await supabase
-      .from('hours_worked')
-      .select('*')
-      .eq('invoice_id', invoiceId);
-    
-    return hoursWorked || [];
-  };
+  
 
   const fetchInvoices = useCallback(async () => {
     setLoading(true);
@@ -86,23 +65,7 @@ export function useInvoices(
       return;
     }
     
-    // Obtener el total y las horas trabajadas para cada factura
-    const invoicesWithDetails = await Promise.all(
-      (data || []).map(async (invoice) => {
-        const [total, hoursWorked] = await Promise.all([
-          calculateInvoiceTotal(invoice.id),
-          fetchInvoiceWithHours(invoice.id)
-        ]);
-        
-        return { 
-          ...invoice, 
-          total,
-          hours_worked: hoursWorked
-        };
-      })
-    );
-    
-    setInvoices(invoicesWithDetails);
+    setInvoices(data || []);
     setTotalCount(count || 0);
     setLoading(false);
   }, [userId, filters, currentPage, currentPageSize]);
