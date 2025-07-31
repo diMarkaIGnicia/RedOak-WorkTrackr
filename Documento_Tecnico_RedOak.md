@@ -123,6 +123,7 @@ RedOak es una aplicación web (PWA) para la gestión de usuarios, registro de ho
 - `date_off`: DATE
 - `status`: ENUM('Creada', 'Enviada', 'En Revisión', 'Pagada')
 - `created_at`: TIMESTAMP default now()
+- `total`: DECIMAL
 
 ### 🔗 Reporte Tareas
 
