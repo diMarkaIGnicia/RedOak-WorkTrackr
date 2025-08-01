@@ -3,7 +3,7 @@ import { useUserProfileContext } from '../context/UserProfileContext';
 import { supabase } from '../services/supabaseClient';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { v4 as uuidv4 } from 'uuid';
 
 export default function ProfilePage() {

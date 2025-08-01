@@ -8,7 +8,7 @@ import HoursWorkedDetailPage from '../pages/HoursWorkedDetailPage';
 import ForgotPasswordPage from '../pages/ForgotPasswordPage';
 import ResetPasswordPage from '../pages/ResetPasswordPage';
 import ProtectedRoute from './ProtectedRoute';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import ReportsPage from '../pages/ReportsPage';
 import ReportsEditPage from '../pages/ReportsEditPage';
 import InvoicePage from '../pages/InvoicePage';

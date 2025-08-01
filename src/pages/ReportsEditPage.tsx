@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { ReportsForm, ReportsFormValues } from '../components/ReportsForm';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import { useReports } from '../hooks/useReports';
 import { supabase } from '../services/supabaseClient';

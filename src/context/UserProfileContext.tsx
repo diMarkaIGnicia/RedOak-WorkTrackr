@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useCallback } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from './AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 
 export interface UserProfile {

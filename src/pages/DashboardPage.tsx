@@ -53,7 +53,7 @@ const PreviewWithLoading: React.FC<{ url?: string; cliente: string }> = ({ url, 
   );
 };
 
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { useUserProfile } from '../hooks/useUserProfile';
 import { useHoursWorked } from '../hooks/useHoursWorked';
 import { UserIcon, CalendarIcon, LockClosedIcon, LockOpenIcon, CurrencyDollarIcon, ClockIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';

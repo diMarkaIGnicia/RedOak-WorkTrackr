@@ -1,6 +1,6 @@
 import React from 'react';
 import { useUserProfileContext } from '../context/UserProfileContext';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 
 interface ModuleHeaderProps {
   onMenuClick?: () => void;

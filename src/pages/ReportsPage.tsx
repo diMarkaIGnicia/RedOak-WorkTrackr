@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import ModuleTemplate from '../layouts/ModuleTemplate';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../context/AuthContext';
 import { useReports, Report } from '../hooks/useReports';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfileContext } from '../context/UserProfileContext';

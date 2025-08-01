@@ -4,11 +4,19 @@ import { UserProfileProvider } from './context/UserProfileContext';
 
 import { Toaster } from 'react-hot-toast';
 
-const App: React.FC = () => (
-  <UserProfileProvider>
-    <AppRoutes />
-    <Toaster position="top-right" />
-  </UserProfileProvider>
-);
+import { AuthProvider } from './context/AuthContext';
+
+const App: React.FC = () => {
+
+  return (
+    <AuthProvider>
+      <UserProfileProvider>
+        <AppRoutes />
+        <Toaster position="top-right" />
+      </UserProfileProvider>
+    </AuthProvider>
+  );
+};
 
 export default App;
+
