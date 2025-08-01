@@ -44,9 +44,9 @@ interface InvoiceFormProps {
 export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
   const { profile, loading: loadingProfile } = useUserProfileContext();
   // Cargar horas ya asociadas a esta factura (para mostrar fuera del modal)
-  const shouldFetchAssociated = !loadingProfile && !!profile?.id && props.initialValues?.id;
+  const shouldFetchAssociated = !!props.initialValues?.id;
   const { hoursWorked: associatedHours, loading: loadingAssociated } = shouldFetchAssociated
-    ? useHoursWorked(profile.id, { invoice_id: props.initialValues?.id || '' }, 1, 100)
+    ? useHoursWorked(undefined, { invoice_id: props.initialValues?.id || '' }, 1, 100)
     : { hoursWorked: [], loading: false };
 
   // Cargar horas no asociadas a ninguna factura (para mostrar en el modal)
