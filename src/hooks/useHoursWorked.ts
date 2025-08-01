@@ -41,8 +41,10 @@ export function useHoursWorked(
     const to = from + currentPageSize - 1;
     let query = supabase
       .from('hours_worked')
-      .select('*, customers:customer_id(full_name)', { count: 'exact' })
-      .eq('user_id', userId);
+      .select('*, customers:customer_id(full_name)', { count: 'exact' });
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
     if (filters?.date_worked) {
       query = query.eq('date_worked', filters.date_worked);
     }
@@ -83,7 +85,6 @@ export function useHoursWorked(
   // Un solo useEffect para fetch y suscripción, con logs de depuración
   const mountedRef = useRef(false);
   useEffect(() => {
-    if (!userId) return;
     if (filters && Object.prototype.hasOwnProperty.call(filters, 'invoice_id') && typeof filters.invoice_id === 'undefined') return;
     mountedRef.current = true;
     fetchHoursWorked();

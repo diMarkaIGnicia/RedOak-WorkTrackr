@@ -5,23 +5,39 @@ import { useHoursWorked, HoursWorked } from '../hooks/useHoursWorked';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import Toast from '../components/Toast';
+import { useUsers, User } from '../hooks/useUsers';
 
 export default function HoursWorkedPage() {
+
   const navigate = useNavigate();
   const { profile, loading: loadingProfile } = useUserProfileContext();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState({
+  // Memo para estabilizar los filtros y evitar ciclos infinitos
+  const [filtersState, setFiltersState] = useState({
     date_worked: '',
-    customer_id: ''
+    customer_id: '',
+    user_id: ''
   });
+  const filters = React.useMemo(() => ({ ...filtersState }), [filtersState]);
   // Estado temporal para los inputs de filtro
   const [pendingFilters, setPendingFilters] = useState({
     date_worked: '',
     customer_id: '',
+    user_id: ''
   });
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  const { hoursWorked, loading, error, totalCount, page: currentPage, pageSize: currentPageSize, setPage: setPageFromHook, deleteHoursWorked } = useHoursWorked(profile?.id, filters, page, pageSize);
+  // Siempre llamar al hook; el propio hook debe proteger el fetch si userId no está listo
+  // Si es administrador y no hay filtro de usuario, ver todas las horas (userId undefined)
+  const userId = profile?.role === 'administrator'
+    ? (filters.user_id ? filters.user_id : undefined)
+    : profile?.id;
+  const { hoursWorked, loading, error, totalCount, page: currentPage, pageSize: currentPageSize, setPage: setPageFromHook, deleteHoursWorked } = useHoursWorked(userId, filters, page, pageSize);
+
+  // Obtener usuarios para el filtro
+  // Memo para evitar ciclo infinito
+  const stableUserFilters = React.useMemo(() => ({}), []);
+  const { users: userOptions, loading: loadingUsers } = useUsers(stableUserFilters, 1, 100); // cargar hasta 100 usuarios
   const [toast, setToast] = useState<{
     message: string;
     type: 'success' | 'error' | 'info' | 'warning';
@@ -42,7 +58,7 @@ export default function HoursWorkedPage() {
     // Usar un diálogo personalizado en lugar de window.confirm
     const confirmDelete = window.confirm('¿Seguro que deseas eliminar esta hora trabajada?');
     if (!confirmDelete) return;
-    
+
     const result = await deleteHoursWorked(id);
     if (result.success) {
       showToast('Hora trabajada eliminada correctamente', 'success');
@@ -52,6 +68,19 @@ export default function HoursWorkedPage() {
       showToast('Ocurrió un error al procesar la solicitud', 'error');
     }
   };
+
+  // Handler para aplicar filtros
+  const handleFilterSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setFiltersState({
+      date_worked: pendingFilters.date_worked,
+      customer_id: pendingFilters.customer_id,
+      user_id: pendingFilters.user_id,
+    });
+    setPage(1);
+    setPageFromHook(1);
+  };
+
 
   return (
     <ModuleTemplate>
@@ -82,6 +111,24 @@ export default function HoursWorkedPage() {
         </div>
         <div className={`bg-white p-4 rounded-xl shadow-md border border-gray-200 mb-6 ${isFiltersOpen ? 'block' : 'hidden'} md:block`}>
           <div className="flex flex-col md:flex-row items-end gap-4">
+            {/* Filtro Usuario (solo para administradores) */}
+            {profile?.role === 'administrator' && (
+              <div className="flex-1 w-full md:w-auto">
+                <label className="block text-sm font-medium mb-1">Usuario</label>
+                <select
+                  name="user_id"
+                  value={pendingFilters.user_id || ''}
+                  onChange={e => setPendingFilters(prev => ({ ...prev, user_id: e.target.value }))}
+                  className="w-full px-3 py-2 border rounded"
+                  disabled={loadingUsers}
+                >
+                  <option value="">Todos</option>
+                  {userOptions && userOptions.map((user: User) => (
+                    <option key={user.id} value={user.id}>{user.full_name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             {/* Filtro Fecha */}
             <div className="flex-1 w-full md:w-auto">
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
@@ -108,21 +155,21 @@ export default function HoursWorkedPage() {
             <div className="flex items-center gap-2">
               <button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold shadow-sm flex items-center gap-2 text-sm transition-colors"
-                onClick={() => setFilters({ ...pendingFilters })}
+                onClick={() => setFiltersState({ ...pendingFilters })}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
                 Buscar
               </button>
-              {(filters.date_worked || filters.customer_id) && (
+              {(filters.date_worked || filters.customer_id || filters.user_id) && (
                 <button
                   className="ml-auto flex items-center gap-1 px-2 py-1 rounded border border-gray-300 bg-gray-100 text-xs text-gray-700 hover:bg-gray-200 transition btn-xs"
                   style={{ minHeight: 0, height: 28 }}
                   title="Limpiar filtros"
                   onClick={() => {
-                    setFilters({ date_worked: '', customer_id: '' });
-                    setPendingFilters({ date_worked: '', customer_id: '' });
+                    setFiltersState({ date_worked: '', customer_id: '', user_id: '' });
+                    setPendingFilters({ date_worked: '', customer_id: '', user_id: '' });
                   }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -138,6 +185,9 @@ export default function HoursWorkedPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                {profile?.role === 'administrator' && (
+                  <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Usuario</th>
+                )}
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Fecha</th>
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Cliente</th>
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Tipo de Trabajo</th>
@@ -154,72 +204,78 @@ export default function HoursWorkedPage() {
               ) : hoursWorked.length === 0 ? (
                 <tr><td colSpan={6} className="text-center p-4 text-gray-500">No hay horas trabajadas.</td></tr>
               ) : (
-                hoursWorked.map((hoursWorked: HoursWorked) => (
-                  <tr
-                    key={hoursWorked.id}
-                    className="hover:bg-gray-50 transition"
-                  >
-                    <td className="px-4 py-2 text-sm">{hoursWorked.date_worked}</td>
-                    <td className="px-4 py-2 text-sm">{hoursWorked.customer_name || hoursWorked.customer_id}</td>
-                    <td className="px-4 py-2 text-sm">{hoursWorked.type_work}</td>
-                    <td className="px-4 py-2 text-sm">{hoursWorked.hours}</td>
-                    <td className="px-4 py-2 text-sm text-right">
-                      $ {Number(hoursWorked.hours * hoursWorked.rate_hour).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </td>
-                    <td className="px-4 py-2 text-sm text-center">
-                      <div className="flex justify-center gap-2">
-                        <button
-                          className="text-blue-500 hover:bg-blue-50 rounded-full p-1"
-                          title="Ver detalle"
-                          onClick={() => navigate(`/horas-trabajadas/detalle/${hoursWorked.id}`, { state: { hoursWorked } })}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
-                        </button>
-                        <button
-                          className={`${hoursWorked.invoice_id ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-500 hover:bg-yellow-50'} rounded-full p-1`}
-                          title={hoursWorked.invoice_id ? 'No se puede editar - Tiene factura asociada' : 'Editar'}
-                          disabled={!!hoursWorked.invoice_id}
-                          onClick={(e) => {
-                            if (hoursWorked.invoice_id) {
-                              e.preventDefault();
-                              showToast('No se puede editar una hora trabajada que ya está asociada a una factura', 'warning');
-                              return;
-                            }
-                            navigate(`/horas-trabajadas/editar/${hoursWorked.id}`, {
-                              state: {
-                                hoursWorked: {
-                                  id: hoursWorked.id,
-                                  date_worked: hoursWorked.date_worked || '',
-                                  customer_id: hoursWorked.customer_id || '',
-                                  type_work: hoursWorked.type_work || '',
-                                  type_work_other: hoursWorked.type_work_other || '',
-                                  hours: typeof hoursWorked.hours === 'number' ? hoursWorked.hours : 0,
-                                  rate_hour: typeof hoursWorked.rate_hour === 'number' ? hoursWorked.rate_hour : 0
-                                }
+                hoursWorked.map((hoursWorked: HoursWorked) => {
+                  const usuario = userOptions?.find(u => u.id === hoursWorked.user_id)?.full_name || hoursWorked.user_id;
+                  return (
+                    <tr
+                      key={hoursWorked.id}
+                      className="hover:bg-gray-50 transition"
+                    >
+                      {profile?.role === 'administrator' && (
+                        <td className="px-4 py-2 text-sm">{usuario}</td>
+                      )}
+                      <td className="px-4 py-2 text-sm">{hoursWorked.date_worked}</td>
+                      <td className="px-4 py-2 text-sm">{hoursWorked.customer_name || hoursWorked.customer_id}</td>
+                      <td className="px-4 py-2 text-sm">{hoursWorked.type_work}</td>
+                      <td className="px-4 py-2 text-sm">{hoursWorked.hours}</td>
+                      <td className="px-4 py-2 text-sm text-right">
+                        $ {Number(hoursWorked.hours * hoursWorked.rate_hour).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      </td>
+                      <td className="px-4 py-2 text-sm text-center">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            className="text-blue-500 hover:bg-blue-50 rounded-full p-1"
+                            title="Ver detalle"
+                            onClick={() => navigate(`/horas-trabajadas/detalle/${hoursWorked.id}`, { state: { hoursWorked } })}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
+                          <button
+                            className={`${hoursWorked.invoice_id ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-500 hover:bg-yellow-50'} rounded-full p-1`}
+                            title={hoursWorked.invoice_id ? 'No se puede editar - Tiene factura asociada' : 'Editar'}
+                            disabled={!!hoursWorked.invoice_id}
+                            onClick={(e) => {
+                              if (hoursWorked.invoice_id) {
+                                e.preventDefault();
+                                showToast('No se puede editar una hora trabajada que ya está asociada a una factura', 'warning');
+                                return;
                               }
-                            });
-                          }}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                          </svg>
-                        </button>
-                        <button
-                          className="text-red-600 hover:bg-red-50 rounded-full p-1"
-                          title="Eliminar"
-                          onClick={() => handleDelete(hoursWorked.id)}
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                              navigate(`/horas-trabajadas/editar/${hoursWorked.id}`, {
+                                state: {
+                                  hoursWorked: {
+                                    id: hoursWorked.id,
+                                    date_worked: hoursWorked.date_worked || '',
+                                    customer_id: hoursWorked.customer_id || '',
+                                    type_work: hoursWorked.type_work || '',
+                                    type_work_other: hoursWorked.type_work_other || '',
+                                    hours: typeof hoursWorked.hours === 'number' ? hoursWorked.hours : 0,
+                                    rate_hour: typeof hoursWorked.rate_hour === 'number' ? hoursWorked.rate_hour : 0
+                                  }
+                                }
+                              });
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                          <button
+                            className="text-red-600 hover:bg-red-50 rounded-full p-1"
+                            title="Eliminar"
+                            onClick={() => handleDelete(hoursWorked.id)}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
