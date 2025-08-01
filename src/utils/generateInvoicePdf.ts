@@ -97,9 +97,31 @@ export const generateInvoicePdf = ({ invoice, profile }: GenerateInvoicePdfProps
   currentY += 10;
   
   // Add hours worked as simple lines
-  if (invoice.hours_worked && Array.isArray(invoice.hours_worked) && invoice.hours_worked.length > 0) {
+  // Si no hay horas_worked cargadas, intentar obtenerlas directamente por invoice_id
+  const [hoursWorked, setHoursWorked] = typeof window !== 'undefined' && (window as any).__hoursWorkedForPdf ? [(window as any).__hoursWorkedForPdf, null] : [invoice.hours_worked, null];
+  if ((!hoursWorked || !Array.isArray(hoursWorked) || hoursWorked.length === 0) && invoice.id) {
+    // Intentar cargar desde Supabase si es posible (solo si estamos en un entorno donde supabase está disponible)
+    if (typeof window !== 'undefined' && (window as any).supabase) {
+      // Esta parte es asíncrona, así que solo muestra mensaje mientras tanto
+      doc.text('Cargando horas trabajadas...', 20, currentY);
+      (async () => {
+        const { data, error } = await (window as any).supabase
+          .from('hours_worked')
+          .select('*')
+          .eq('invoice_id', invoice.id);
+        if (!error && Array.isArray(data)) {
+          (window as any).__hoursWorkedForPdf = data;
+          // Recomendar al usuario exportar nuevamente
+          alert('Las horas trabajadas fueron cargadas, por favor exporta nuevamente el PDF.');
+        }
+      })();
+      return;
+    }
+  }
+  const hoursToExport = Array.isArray(hoursWorked) && hoursWorked.length > 0 ? hoursWorked : [];
+  if (hoursToExport.length > 0) {
     // Sort hours by date
-    const sortedHours = [...invoice.hours_worked].sort((a, b) => 
+    const sortedHours = [...hoursToExport].sort((a, b) => 
       new Date(a.date_worked).getTime() - new Date(b.date_worked).getTime()
     );
     

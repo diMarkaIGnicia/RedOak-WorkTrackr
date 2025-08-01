@@ -49,7 +49,7 @@ export function useInvoices(
     setError(null);
     let query = supabase
       .from('invoices')
-      .select('*', { count: 'exact' });
+      .select('*, hours_worked:hours_worked(*)', { count: 'exact' });
     if (userId) query = query.eq('user_id', userId);
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
