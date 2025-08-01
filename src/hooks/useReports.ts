@@ -35,8 +35,10 @@ export function useReports(
     const to = from + currentPageSize - 1;
     let query = supabase
       .from('reports')
-      .select('*, customers:customer_id(full_name)', { count: 'exact' })
-      .eq('user_id', userId);
+      .select('*, customers:customer_id(full_name)', { count: 'exact' });
+    if (userId) {
+      query = query.eq('user_id', userId);
+    }
     if (filters?.report_date) {
       query = query.eq('report_date', filters.report_date);
     }
@@ -72,13 +74,13 @@ export function useReports(
   }, [userId, filters, currentPage, currentPageSize]);
 
   useEffect(() => {
-    if (!userId) return;
+    // Si userId está definido, filtrar por usuario; si es undefined (admin), traer todos los reportes
     fetchReports();
     // Real-time subscription
     const channel = supabase.channel('public:reports')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'reports', filter: `user_id=eq.${userId}` },
+        { event: '*', schema: 'public', table: 'reports' },
         fetchReports
       )
       .subscribe();

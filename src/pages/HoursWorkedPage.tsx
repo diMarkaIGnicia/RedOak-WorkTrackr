@@ -119,7 +119,7 @@ export default function HoursWorkedPage() {
                   name="user_id"
                   value={pendingFilters.user_id || ''}
                   onChange={e => setPendingFilters(prev => ({ ...prev, user_id: e.target.value }))}
-                  className="w-full px-3 py-2 border rounded"
+                  className="border border-gray-400 rounded px-2 py-1 w-full sm:text-sm focus:ring-2 focus:ring-blue-500 transition text-gray-700"
                   disabled={loadingUsers}
                 >
                   <option value="">Todos</option>

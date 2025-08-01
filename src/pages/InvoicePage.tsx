@@ -3,6 +3,7 @@ import ModuleTemplate from '../layouts/ModuleTemplate';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import { useInvoices, Invoice } from '../hooks/useInvoices';
+import { useUsers, User } from '../hooks/useUsers';
 import { toast } from 'react-hot-toast';
 import { generateInvoicePdf } from '../utils/generateInvoicePdf';
 
@@ -14,13 +15,20 @@ export default function InvoicePage() {
   }
 
   const [filters, setFilters] = useState<Partial<Invoice>>({});
-  const [pendingFilters, setPendingFilters] = useState<Partial<Invoice>>({ 
+  const [pendingFilters, setPendingFilters] = useState<Partial<Invoice & { user_id?: string }>>({ 
     date_off: '', 
     invoice_number: '',
-    status: ''
+    status: '',
+    user_id: '',
   });
   const [page, setPage] = useState(1);
   const pageSize = 10;
+  // Determinar userId para la consulta de facturas
+  // Si es admin y filtra por usuario, usar ese userId; si no hay filtro, ver todas las facturas (userId undefined)
+  // Si es empleado, solo ver sus propias facturas
+  const userId = profile?.role === 'administrator'
+    ? (filters.user_id ? filters.user_id : undefined)
+    : profile?.id;
   const {
     invoices,
     loading,
@@ -30,7 +38,7 @@ export default function InvoicePage() {
     page: currentPage,
     pageSize: currentPageSize,
     setPage: setPageFromHook
-  } = useInvoices(profile?.id, filters, page, pageSize);
+  } = useInvoices(userId, filters, page, pageSize);
   const navigate = useNavigate();
 
   const handleDelete = async (id: string) => {
@@ -44,15 +52,19 @@ export default function InvoicePage() {
   const handleFilter = (e: React.FormEvent) => {
     e.preventDefault();
     // Create a new filters object with only non-empty values
-    const newFilters: Partial<Invoice> = {};
+    const newFilters: Partial<Invoice & { user_id?: string }> = {};
     if (pendingFilters.date_off) newFilters.date_off = pendingFilters.date_off;
     if (pendingFilters.invoice_number) newFilters.invoice_number = pendingFilters.invoice_number;
     if (pendingFilters.status) newFilters.status = pendingFilters.status;
-    
+    if (pendingFilters.user_id) newFilters.user_id = pendingFilters.user_id;
     setFilters(newFilters);
     setPage(1);
     setPageFromHook(1);
   };
+
+  // Obtener usuarios para el filtro (solo para admin)
+  const userFilters = React.useMemo(() => ({}), []);
+  const { users: userOptions, loading: loadingUsers } = useUsers(userFilters, 1, 100);
 
   if (loadingProfile || loading) return <ModuleTemplate><div className="p-8">Cargando...</div></ModuleTemplate>;
 
@@ -73,6 +85,24 @@ export default function InvoicePage() {
         </div>
         {/* Filtro por fecha */}
         <form onSubmit={handleFilter} className="bg-white p-4 rounded-xl shadow-md border border-gray-200 mb-6 flex flex-col md:flex-row items-end gap-4 justify-center md:justify-center w-full">
+          {/* Filtro Usuario (solo para administradores) */}
+          {profile?.role === 'administrator' && (
+            <div className="flex-1 w-full md:w-auto max-w-xs">
+              <label className="block text-sm font-medium mb-1">Usuario</label>
+              <select
+                name="user_id"
+                value={pendingFilters.user_id || ''}
+                onChange={e => setPendingFilters(f => ({ ...f, user_id: e.target.value }))}
+                className="border border-gray-400 rounded px-2 py-1 w-full sm:text-sm focus:ring-2 focus:ring-blue-500 transition text-gray-700"
+                disabled={loadingUsers}
+              >
+                <option value="">Todos</option>
+                {userOptions && userOptions.map((user: User) => (
+                  <option key={user.id} value={user.id}>{user.full_name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="flex-1 w-full md:w-auto max-w-xs">
             <label className="block text-sm font-medium text-gray-700 mb-1">Número de Factura</label>
             <input
@@ -116,7 +146,7 @@ export default function InvoicePage() {
               </svg>
               Buscar
             </button>
-            {(filters.date_off || filters.invoice_number || filters.status) && (
+            {(filters.date_off || filters.invoice_number || filters.status || filters.user_id) && (
               <button
                 type="button"
                 className="flex items-center gap-1 px-2 py-1 rounded border border-gray-300 bg-gray-100 text-xs text-gray-700 hover:bg-gray-200 transition btn-xs"
@@ -124,7 +154,7 @@ export default function InvoicePage() {
                 title="Limpiar filtros"
                 onClick={() => {
                   setFilters({});
-                  setPendingFilters({ date_off: '', invoice_number: '', status: '' });
+                  setPendingFilters({ date_off: '', invoice_number: '', status: '', user_id: '' });
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -142,6 +172,7 @@ export default function InvoicePage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead>
                 <tr>
+                  {profile?.role === 'administrator' && <th className="px-4 py-2">Usuario</th>}
                   <th className="px-4 py-2">Número</th>
                   <th className="px-4 py-2">Cuenta</th>
                   <th className="px-4 py-2">Fecha de Corte</th>
@@ -153,6 +184,9 @@ export default function InvoicePage() {
               <tbody>
                 {invoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-gray-50">
+                    {profile?.role === 'administrator' && (
+                      <td className="px-4 py-2">{userOptions?.find(u => u.id === inv.user_id)?.full_name || inv.user_id}</td>
+                    )}
                     <td className="px-4 py-2">{inv.invoice_number}</td>
                     <td className="px-4 py-2">{inv.account_name}</td>
                     <td className="px-4 py-2 text-center">{inv.date_off}</td>

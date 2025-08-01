@@ -3,6 +3,7 @@ import CustomerAutocomplete from '../components/CustomerAutocomplete';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { useAuth } from '../context/AuthContext';
 import { useReports, Report } from '../hooks/useReports';
+import { useUsers, User } from '../hooks/useUsers';
 import { useNavigate } from 'react-router-dom';
 import { useUserProfileContext } from '../context/UserProfileContext';
 
@@ -13,17 +14,30 @@ export default function ReportsPage() {
   const { profile, loading: loadingProfile } = useUserProfileContext();
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [filters, setFilters] = useState({
-    date_worked: '',
+    report_date: '',
     customer_id: '',
+    user_id: '',
   });
   // Estado temporal para los inputs de filtro
   const [pendingFilters, setPendingFilters] = useState({
-    date_worked: '',
+    report_date: '',
     customer_id: '',
+    user_id: '',
   });
   const [page, setPage] = useState(1);
   const pageSize = 10;
-  const { reports, loading, error, totalCount, page: currentPage, pageSize: currentPageSize, setPage: setPageFromHook, deleteReport } = useReports(profile?.id, filters, page, pageSize);
+  // Obtener usuarios para el filtro (solo admin)
+  const userFilters = React.useMemo(() => ({}), []);
+  const { users: userOptions, loading: loadingUsers } = useUsers(userFilters, 1, 100);
+
+  // Determinar userId para la consulta de reportes
+  // Si es admin y filtra por usuario, usar ese userId; si no hay filtro, ver todos los reportes (userId undefined)
+  // Si es empleado, solo ver sus propios reportes
+  const userId = profile?.role === 'administrator'
+    ? (filters.user_id ? filters.user_id : undefined)
+    : profile?.id;
+
+  const { reports, loading, error, totalCount, page: currentPage, pageSize: currentPageSize, setPage: setPageFromHook, deleteReport } = useReports(userId, filters, page, pageSize);
   const [deletedMsg, setDeletedMsg] = useState("");
 
   if (loadingProfile) {
@@ -68,13 +82,31 @@ export default function ReportsPage() {
         </div>
         <div className={`bg-white p-4 rounded-xl shadow-md border border-gray-200 mb-6 ${isFiltersOpen ? 'block' : 'hidden'} md:block`}>
           <div className="flex flex-col md:flex-row items-end gap-4">
+            {/* Filtro Usuario (solo para administradores) */}
+            {profile?.role === 'administrator' && (
+              <div className="flex-1 w-full md:w-auto">
+                <label className="block text-sm font-medium mb-1">Usuario</label>
+                <select
+                  name="user_id"
+                  value={pendingFilters.user_id || ''}
+                  onChange={e => setPendingFilters(f => ({ ...f, user_id: e.target.value }))}
+                  className="border border-gray-400 rounded px-2 py-1 w-full sm:text-sm focus:ring-2 focus:ring-blue-500 transition text-gray-700"
+                  disabled={loadingUsers}
+                >
+                  <option value="">Todos</option>
+                  {userOptions && userOptions.map((user: User) => (
+                    <option key={user.id} value={user.id}>{user.full_name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             {/* Filtro Fecha */}
             <div className="flex-1 w-full md:w-auto">
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
               <input
                 type="date"
-                value={pendingFilters.date_worked}
-                onChange={e => setPendingFilters(f => ({ ...f, date_worked: e.target.value }))}
+                value={pendingFilters.report_date}
+                onChange={e => setPendingFilters(f => ({ ...f, report_date: e.target.value }))}
                 className="border border-gray-400 rounded px-2 py-1 w-full sm:text-sm"
               />
             </div>
@@ -101,14 +133,14 @@ export default function ReportsPage() {
                 </svg>
                 Buscar
               </button>
-              {(filters.date_worked || filters.customer_id) && (
+              {(filters.report_date || filters.customer_id || filters.user_id) && (
                 <button
                   className="ml-auto flex items-center gap-1 px-2 py-1 rounded border border-gray-300 bg-gray-100 text-xs text-gray-700 hover:bg-gray-200 transition btn-xs"
                   style={{ minHeight: 0, height: 28 }}
                   title="Limpiar filtros"
                   onClick={() => {
-                    setFilters({ date_worked: '', customer_id: '' });
-                    setPendingFilters({ date_worked: '', customer_id: '' });
+                    setFilters({ report_date: '', customer_id: '', user_id: '' });
+                    setPendingFilters({ report_date: '', customer_id: '', user_id: '' });
                   }}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -124,6 +156,7 @@ export default function ReportsPage() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
+                {profile?.role === 'administrator' && <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Usuario</th>}
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Fecha</th>
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Hora</th>
                 <th className="px-4 py-2 text-xs font-bold text-gray-500 uppercase text-left">Cliente</th>
@@ -144,6 +177,9 @@ export default function ReportsPage() {
                     key={report.id}
                     className="hover:bg-gray-50 transition"
                   >
+                    {profile?.role === 'administrator' && (
+                      <td className="px-4 py-2 text-sm">{userOptions?.find(u => u.id === report.user_id)?.full_name || report.user_id}</td>
+                    )}
                     <td className="px-4 py-2 text-sm">{report.report_date}</td>
                     <td className="px-4 py-2 text-sm">{report.report_time}</td>
                     <td className="px-4 py-2 text-sm">{report.customer_name || report.customer_id}</td>
