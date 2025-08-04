@@ -197,6 +197,7 @@ export default function ReportsPage() {
                                 report_time: report.report_time || '',
                                 customer_id: report.customer_id || '',
                                 description: report.description || '',
+                                user_id: report.user_id || '',
                               }
                             }
                           })}

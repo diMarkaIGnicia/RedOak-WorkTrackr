@@ -15,6 +15,7 @@ export interface Invoice {
   user_id: string;
   account_name?: string;
   account_number?: string;
+  bsb?: string;
   abn?: string;
   mobile_number?: string;
   address?: string;

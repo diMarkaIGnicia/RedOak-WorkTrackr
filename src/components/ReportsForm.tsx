@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { supabase } from '../services/supabaseClient';
+import React, { useState, useMemo } from 'react';
 import CustomerAutocomplete from './CustomerAutocomplete';
 import ObservationsSection, { Observation } from './ObservationsSection';
 import Attachments from './Attachments';
+import { useUsers } from '../hooks/useUsers';
+import { useUserProfileContext } from '../context/UserProfileContext';
 
 
 export interface ReportsFormValues {
@@ -10,29 +11,55 @@ export interface ReportsFormValues {
   report_time: string;
   customer_id: string;
   description: string;
+  user_id: string;
 }
 
 interface ReportsFormProps {
-  initialValues?: ReportsFormValues;
+  initialValues?: Partial<ReportsFormValues>;
   initialObservations?: any[];
   onSubmit?: (values: ReportsFormValues, observations?: any[]) => void;
   onCancel: () => void;
   submitLabel?: string;
   readOnly?: boolean;
   isSaving?: boolean;
+  userId?: string;
+  onUserIdChange?: (userId: string) => void;
 }
 
 
-export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ initialValues, initialObservations = [], onSubmit, onCancel, submitLabel, role, readOnly = false, isSaving = false }) => {
+export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = (props) => {
 
-  const [form, setForm] = useState<ReportsFormValues>(
-    initialValues || {
-      report_date: '',
-      report_time: '',
-      customer_id: '',
-      description: '',
-    }
-  );
+  // --- USUARIO SELECTOR ---
+  const userFilters = useMemo(() => ({}), []); // Objeto estable para evitar ciclos
+  const { users, loading: loadingUsers } = props.role === 'administrator'
+    ? useUsers(userFilters, 1, 100)
+    : { users: [], loading: false }; // Solo admins ven la lista
+
+  const { profile, loading: loadingProfile } = useUserProfileContext();
+  const safeInitialValues = React.useRef(props.initialValues || {});
+
+  const {
+    initialValues = {},
+    initialObservations = [],
+    onSubmit,
+    onCancel,
+    submitLabel = 'Guardar',
+    role,
+    readOnly = false,
+    isSaving = false,
+    userId,
+    onUserIdChange,
+  } = props;
+
+  const [form, setForm] = React.useState<ReportsFormValues>(() => ({
+    report_date: safeInitialValues.current?.report_date || '',
+    report_time: safeInitialValues.current?.report_time || '',
+    customer_id: safeInitialValues.current?.customer_id || '',
+    description: safeInitialValues.current?.description || '',
+    user_id: safeInitialValues.current?.user_id || userId || profile?.id || '',
+  }));
+
+
   const [error, setError] = useState('');
   const [observations, setObservations] = useState<Observation[]>(initialObservations);
 
@@ -52,36 +79,36 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ ini
 
 
   const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      if (readOnly) return;
-      // Validación detallada
-      if (!form.report_date) {
-        setError('Debes ingresar la fecha.');
-        return;
-      }
+    e.preventDefault();
+    if (readOnly) return;
+    // Validación detallada
+    if (!form.report_date) {
+      setError('Debes ingresar la fecha.');
+      return;
+    }
 
-      if (!form.report_time) {
-        setError('Debes ingresar la hora.');
-        return;
-      }
+    if (!form.report_time) {
+      setError('Debes ingresar la hora.');
+      return;
+    }
 
-      if (!form.customer_id) {
-        setError('Debes seleccionar el cliente.');
-        return;
-      }
-     
-      if (!form.description) {
-        setError('Debes ingresar la descripción.');
-        return;
-      }
-      setError('');
-      // Guardar observaciones en Supabase (si hay reportId)
-      // Si el reporte aún no existe, el padre debe guardar primero el reporte y luego las observaciones
-      if (form && (onSubmit as any)) {
-        // El padre debe encargarse de guardar el reporte y luego las observaciones
-        (onSubmit as any)({ ...form }, observations);
-      }
-    };
+    if (!form.customer_id) {
+      setError('Debes seleccionar el cliente.');
+      return;
+    }
+
+    if (!form.description) {
+      setError('Debes ingresar la descripción.');
+      return;
+    }
+    setError('');
+    // Guardar observaciones en Supabase (si hay reportId)
+    // Si el reporte aún no existe, el padre debe guardar primero el reporte y luego las observaciones
+    if (form && (onSubmit as any)) {
+      // El padre debe encargarse de guardar el reporte y luego las observaciones
+      (onSubmit as any)({ ...form }, observations);
+    }
+  };
 
 
   return (
@@ -93,6 +120,32 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ ini
       )}
       {/* --- Campos básicos del reporte --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+        {role === 'administrator' && !readOnly && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Usuario</label>
+            <select
+              value={userId}
+              onChange={e => {
+                const newUserId = e.target.value;
+                onUserIdChange?.(newUserId);
+                setForm(prev => ({
+                  ...prev,
+                  user_id: newUserId,
+                }));
+              }}
+              className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition bg-white"
+              disabled={readOnly || loadingUsers}
+              required
+            >
+              <option value="">Seleccione un usuario</option>
+              {users.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium mb-1">Fecha <span className="text-red-500">*</span></label>
           <input type="date" className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition" name="report_date" value={form.report_date} onChange={handleChange} required />
@@ -109,14 +162,14 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = ({ ini
             readOnly={readOnly}
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium mb-1">Descripción <span className="text-red-500">*</span></label>
           <textarea className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition" name="description" value={form.description} onChange={handleChange} required></textarea>
         </div>
       </div>
 
-      
+
 
       {/* Adjuntos */}
       {!readOnly && initialValues?.id && (

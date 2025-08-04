@@ -48,7 +48,7 @@ export default function InvoiceDetailPage() {
             account_name: foundInvoice.account_name || '',
             account_number: foundInvoice.account_number || '',
             bsb: '', // Este campo no existe en la interfaz Invoice
-            bank_name: foundInvoice.bank_name || '',
+            bank: foundInvoice.bank || '',
             abn: foundInvoice.abn || '',
             mobile_number: foundInvoice.mobile_number || '',
             address: foundInvoice.address || '',
@@ -109,6 +109,9 @@ export default function InvoiceDetailPage() {
     };
   }, [invoiceData, hoursWorked]);
 
+  // Estado para el userId seleccionado
+  const [selectedUserId, setSelectedUserId] = useState(invoice?.user_id || profile?.id || '');
+
   if (loadingProfile || loading) return <ModuleTemplate><div className="p-8">Cargando...</div></ModuleTemplate>;
 
   return (
@@ -129,6 +132,8 @@ export default function InvoiceDetailPage() {
           submitLabel={undefined}
           role={profile?.role || ''}
           readOnly={true}
+          userId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
         />
       </div>
     </ModuleTemplate>

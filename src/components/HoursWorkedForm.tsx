@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { supabase } from '../services/supabaseClient';
+import React, { useState, useMemo } from 'react';
 import CustomerAutocomplete from './CustomerAutocomplete';
+import { useUsers } from '../hooks/useUsers';
+import { useUserProfileContext } from '../context/UserProfileContext';
 
 
 export interface HoursWorkedFormValues {
@@ -11,14 +12,17 @@ export interface HoursWorkedFormValues {
   hours: number;
   rate_hour: number;
   state: string;
+  user_id: string;
 }
 
 interface HoursWorkedFormProps {
-  initialValues?: HoursWorkedFormValues;
+  initialValues?: Partial<HoursWorkedFormValues>;
   onSubmit?: (values: HoursWorkedFormValues) => void;
   onCancel: () => void;
   submitLabel?: string;
   readOnly?: boolean;
+  userId?: string;
+  onUserIdChange?: (userId: string) => void;
 }
 
 const TIPOS_TRABAJO = [
@@ -31,22 +35,40 @@ const TIPOS_TRABAJO = [
 const ESTADOS = ['Creada', 'Enviada', 'Pagada'];
 
 
-export const HoursWorkedForm: React.FC<HoursWorkedFormProps & { role: string }> = ({ initialValues, onSubmit, onCancel, submitLabel, role, readOnly = false }) => {
+export const HoursWorkedForm: React.FC<HoursWorkedFormProps & { role: string }> = (props) => {
 
-  const [form, setForm] = useState<HoursWorkedFormValues>(
-    initialValues || {
-      date_worked: '',
-      customer_id: '',
-      type_work: '',
-      type_work_other: '',
-      hours: 0,
-      rate_hour: 0,
-      state: role === 'employee' ? 'Creada' : 'Creada'
-    }
-  );
+  // --- USUARIO SELECTOR ---
+  const userFilters = useMemo(() => ({}), []); // Objeto estable para evitar ciclos
+  const { users, loading: loadingUsers } = props.role === 'administrator'
+    ? useUsers(userFilters, 1, 100)
+    : { users: [], loading: false }; // Solo admins ven la lista
+
+  const { profile, loading: loadingProfile } = useUserProfileContext();
+  const safeInitialValues = React.useRef(props.initialValues || {});
+
+
+  const {
+    initialValues = {},
+    onSubmit,
+    onCancel,
+    submitLabel = 'Guardar',
+    role,
+    readOnly = false,
+    userId,
+    onUserIdChange,
+  } = props;
+
+  const [form, setForm] = React.useState<HoursWorkedFormValues>(() => ({
+    date_worked: safeInitialValues.current.date_worked || '',
+    customer_id: safeInitialValues.current.customer_id || '',
+    type_work: safeInitialValues.current.type_work || '',
+    type_work_other: safeInitialValues.current.type_work_other || '',
+    hours: safeInitialValues.current.hours || 0,
+    rate_hour: safeInitialValues.current.rate_hour || 0,
+    state: safeInitialValues.current.state || 'Creada',
+    user_id: safeInitialValues.current.user_id || userId || profile?.id || '',
+  }));
   const [error, setError] = useState('');
-
-
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     if (readOnly) return;
@@ -87,11 +109,18 @@ export const HoursWorkedForm: React.FC<HoursWorkedFormProps & { role: string }> 
       return;
     }
     setError('');
-    // Solo pasa los datos y adjuntos al padre; observaciones se pasan como tercer argumento
-    // eslint-disable-next-line
-    (onSubmit as any) && onSubmit({ ...form });
+
+    let submitValues = { ...form };
+    if (role !== 'administrator' && profile?.id) {
+      submitValues.user_id = profile.id;
+    }
+    console.log('submitValues', submitValues);
+    onSubmit && onSubmit(submitValues);
   };
 
+  // Estado para el userId seleccionado
+  const [selectedUserId, setSelectedUserId] = useState(form.user_id || profile?.id || '');
+  
 
   return (
     <form onSubmit={handleSubmit}>
@@ -102,6 +131,32 @@ export const HoursWorkedForm: React.FC<HoursWorkedFormProps & { role: string }> 
       )}
       {/* --- Campos básicos de la tarea --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+        {role === 'administrator' && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Usuario</label>
+            <select
+              value={userId}
+              onChange={e => {
+                const newUserId = selectedUserId;
+                onUserIdChange?.(newUserId);
+                setForm(prev => ({
+                  ...prev,
+                  user_id: newUserId,
+                }));
+              }}
+              className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition bg-white"
+              disabled={readOnly || loadingUsers}
+              required
+            >
+              <option value="">Seleccione un usuario</option>
+              {users.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium mb-1">Fecha <span className="text-red-500">*</span></label>
           <input type="date" className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition" name="date_worked" value={form.date_worked} onChange={handleChange} required />

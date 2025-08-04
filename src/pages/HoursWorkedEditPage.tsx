@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { HoursWorkedForm, HoursWorkedFormValues } from '../components/HoursWorkedForm';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -32,7 +32,7 @@ export default function HoursWorkedEditPage() {
         type_work_other: values.type_work_other,
         hours: values.hours,
         rate_hour: values.rate_hour,
-        user_id: profile.id,
+        user_id: values.user_id,
       };
       if (hoursWorked && hoursWorked.id) {
         // UPDATE si existe
@@ -75,6 +75,8 @@ export default function HoursWorkedEditPage() {
     }
   };
 
+  // Estado para el userId seleccionado
+  const [selectedUserId, setSelectedUserId] = useState(hoursWorked?.user_id || profile?.id || '');
 
   if (loadingProfile) return <ModuleTemplate><div className="p-8">Cargando...</div></ModuleTemplate>;
 
@@ -83,11 +85,14 @@ export default function HoursWorkedEditPage() {
       <div className="max-w-3xl mx-auto p-8 bg-white rounded-2xl shadow-2xl border border-gray-200 mt-8">
         <h1 className="text-2xl font-montserrat font-bold mb-6 text-blue-dark">{hoursWorked ? 'Editar Horas Trabajadas' : 'Registrar Horas Trabajadas'}</h1>
         <HoursWorkedForm
+          key={hoursWorked?.id || 'new'}
           initialValues={hoursWorked}
           onSubmit={handleSubmit}
           onCancel={() => navigate('/horas-trabajadas')}
           submitLabel={hoursWorked ? 'Actualizar' : 'Crear'}
           role={profile?.role || ''}
+          userId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
         />
       </div>
     </ModuleTemplate>

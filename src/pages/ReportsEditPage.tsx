@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { ReportsForm, ReportsFormValues } from '../components/ReportsForm';
@@ -17,7 +17,8 @@ export default function ReportsEditPage() {
   const { addReport, updateReport } = useReports(profile?.id);
 
   // Si location.state tiene task, es edición; si no, es creación
-  const report = (location.state && (location.state as any).report) as (ReportsFormValues & { id?: string }) | undefined;
+  const reportRef = React.useRef((location.state && (location.state as any).report) as (ReportsFormValues & { id?: string }) | undefined);
+  const report = reportRef.current;
 
   const [initialObservations, setInitialObservations] = React.useState<any[]>([]);
   React.useEffect(() => {
@@ -70,7 +71,7 @@ export default function ReportsEditPage() {
         report_time: values.report_time,
         customer_id: values.customer_id,
         description: values.description || null,
-        user_id: profile.id,
+        user_id: values.user_id,
       };
       if (report && report.id) {
         // UPDATE si existe
@@ -114,6 +115,8 @@ export default function ReportsEditPage() {
     }
   };
 
+  // Estado para el userId seleccionado
+  const [selectedUserId, setSelectedUserId] = useState(report?.user_id || profile?.id || '');
 
   if (loadingProfile) return <ModuleTemplate><div className="p-8">Cargando...</div></ModuleTemplate>;
 
@@ -129,6 +132,8 @@ export default function ReportsEditPage() {
           submitLabel={report ? 'Actualizar' : 'Crear'}
           role={profile?.role || ''}
           isSaving={isSaving}
+          userId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
         />
       </div>
     </ModuleTemplate>

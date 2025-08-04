@@ -252,8 +252,9 @@ export default function HoursWorkedPage() {
                                     type_work: hoursWorked.type_work || '',
                                     type_work_other: hoursWorked.type_work_other || '',
                                     hours: typeof hoursWorked.hours === 'number' ? hoursWorked.hours : 0,
-                                    rate_hour: typeof hoursWorked.rate_hour === 'number' ? hoursWorked.rate_hour : 0
-                                  }
+                                    rate_hour: typeof hoursWorked.rate_hour === 'number' ? hoursWorked.rate_hour : 0,
+                                    user_id: hoursWorked.user_id || ''
+                                    }
                                 }
                               });
                             }}

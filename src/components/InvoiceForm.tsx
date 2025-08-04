@@ -74,6 +74,7 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
     userId,
     onUserIdChange,
   } = props;
+
   // Garantizar que initialValues nunca sea null/undefined
   const safeInitialValues = React.useRef(initialValues || {});
   const [values, setValues] = React.useState<InvoiceFormValues>(() => ({
@@ -141,12 +142,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
   };
 
 
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         {/* Campo Usuarios solo para administradores */}
-        {props.role === 'administrator' && !readOnly && (
+        {props.role === 'administrator' && (
           <div>
             <label className="block text-sm font-medium mb-1">Usuario</label>
             <select

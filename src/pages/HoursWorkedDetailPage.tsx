@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { HoursWorkedForm, HoursWorkedFormValues } from '../components/HoursWorkedForm';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -12,6 +12,9 @@ export default function HoursWorkedDetailPage() {
   // Recibe la tarea por location.state (igual que en edición)
   const hoursWorked = (location.state && (location.state as any).hoursWorked) as (HoursWorkedFormValues & { id?: string }) | undefined;
 
+  // Estado para el userId seleccionado
+  const [selectedUserId, setSelectedUserId] = useState(hoursWorked?.user_id || profile?.id || '');
+  
   if (loadingProfile) return <ModuleTemplate><div className="p-8">Cargando...</div></ModuleTemplate>;
 
   return (
@@ -25,6 +28,8 @@ export default function HoursWorkedDetailPage() {
           submitLabel={undefined}
           role={profile?.role || ''}
           readOnly={true}
+          userId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
         />
       </div>
     </ModuleTemplate>
