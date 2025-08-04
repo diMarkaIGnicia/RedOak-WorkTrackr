@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ModuleTemplate from '../layouts/ModuleTemplate';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { InvoiceForm, InvoiceFormValues } from '../components/InvoiceForm';
@@ -44,11 +44,13 @@ export default function InvoiceEditPage() {
     }
 
     // Si es una factura nueva, establecer la fecha automáticamente
+    // Usar el user_id del formulario si está presente (para admins)
+    const userIdToUse = values.user_id || profile?.id;
     const invoiceData = isEdit
-      ? { ...restValues, user_id: profile?.id, total }
+      ? { ...restValues, user_id: userIdToUse, total }
       : {
           ...restValues,
-          user_id: profile?.id,
+          user_id: userIdToUse,
           date_off: calculateInvoiceDate(),
           total
         };
@@ -71,7 +73,9 @@ export default function InvoiceEditPage() {
         .eq('invoice_id', invoiceId);
       if (allHoursError) throw new Error('Error obteniendo horas asociadas');
       const newTotal = (allHours || []).reduce((sum: number, hw: any) => sum + (Number(hw.hours) * Number(hw.rate_hour)), 0);
-      await updateInvoice(invoiceId!, { ...restValues, user_id: profile?.id, total: newTotal });
+      // Usar el user_id del formulario si está presente (para admins)
+      const userIdToUse = values.user_id || profile?.id;
+      await updateInvoice(invoiceId!, { ...restValues, user_id: userIdToUse, total: newTotal });
       toast.success('Factura actualizada correctamente');
     } else {
       // Crear nueva factura con los datos calculados
@@ -94,6 +98,9 @@ export default function InvoiceEditPage() {
   }
 };
 
+  // Estado para el userId seleccionado
+  const [selectedUserId, setSelectedUserId] = useState(invoice?.user_id || profile?.id || '');
+
   if (loadingProfile) return <ModuleTemplate><div className="p-8">Cargando...</div></ModuleTemplate>;
 
   return (
@@ -107,6 +114,8 @@ export default function InvoiceEditPage() {
           onCancel={() => navigate('/facturas')}
           submitLabel={invoice ? 'Actualizar' : 'Crear'}
           role={profile?.role || ''}
+          userId={selectedUserId}
+          onUserIdChange={setSelectedUserId}
         />
       </div>
     </ModuleTemplate>

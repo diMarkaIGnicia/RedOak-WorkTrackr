@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import HoursWorkedMultiSelectTable from './HoursWorkedMultiSelectTable';
 import Modal from './Modal';
 import { useUserProfileContext } from '../context/UserProfileContext';
 import { useHoursWorked } from '../hooks/useHoursWorked';
+import { useUsers } from '../hooks/useUsers';
 
 export type InvoiceStatus =  'Creada' | 'Enviada' | 'En Revisión' | 'Pagada';
 
@@ -39,9 +40,17 @@ interface InvoiceFormProps {
   submitLabel?: string;
   role: string;
   readOnly?: boolean;
+  userId?: string;
+  onUserIdChange?: (userId: string) => void;
 }
 
+
 export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
+  // --- USUARIO SELECTOR ---
+  const userFilters = useMemo(() => ({}), []); // Objeto estable para evitar ciclos
+  const { users, loading: loadingUsers } = props.role === 'administrator'
+    ? useUsers(userFilters, 1, 100)
+    : { users: [], loading: false }; // Solo admins ven la lista
   const { profile, loading: loadingProfile } = useUserProfileContext();
   // Cargar horas ya asociadas a esta factura (para mostrar fuera del modal)
   const shouldFetchAssociated = !!props.initialValues?.id;
@@ -50,11 +59,11 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
     : { hoursWorked: [], loading: false };
 
   // Cargar horas no asociadas a ninguna factura (para mostrar en el modal)
-  const shouldFetchAvailable = !loadingProfile && !!profile?.id;
+  const shouldFetchAvailable = !loadingProfile && !!props.userId;
   const { hoursWorked: availableHours, loading: loadingAvailable } = shouldFetchAvailable
-    ? useHoursWorked(profile.id, { invoice_id: null }, 1, 100)
+    ? useHoursWorked(props.userId, { invoice_id: null }, 1, 100)
     : { hoursWorked: [], loading: true };
-
+  
   const {
     initialValues = {},
     onSubmit,
@@ -62,12 +71,14 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
     submitLabel = 'Guardar',
     role,
     readOnly = false,
+    userId,
+    onUserIdChange,
   } = props;
   // Garantizar que initialValues nunca sea null/undefined
   const safeInitialValues = React.useRef(initialValues || {});
   const [values, setValues] = React.useState<InvoiceFormValues>(() => ({
     invoice_number: safeInitialValues.current.invoice_number || '',
-    user_id: safeInitialValues.current.user_id || profile?.id || '',
+    user_id: safeInitialValues.current.user_id || userId || profile?.id || '',
     account_name: safeInitialValues.current.account_name || profile?.account_name || '',
     account_number: safeInitialValues.current.account_number || profile?.account_number || '',
     bsb: safeInitialValues.current.bsb || profile?.bsb || '',
@@ -121,7 +132,12 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (onSubmit) onSubmit(values);
+    let submitValues = { ...values };
+    if (role !== 'administrator' && profile?.id) {
+      submitValues.user_id = profile.id;
+    }
+    // Si es admin, se respeta el user_id seleccionado
+    if (onSubmit) onSubmit(submitValues);
   };
 
 
@@ -129,6 +145,32 @@ export const InvoiceForm: React.FC<InvoiceFormProps> = (props) => {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        {/* Campo Usuarios solo para administradores */}
+        {props.role === 'administrator' && !readOnly && (
+          <div>
+            <label className="block text-sm font-medium mb-1">Usuario</label>
+            <select
+              value={userId}
+              onChange={e => {
+                const newUserId = e.target.value;
+                onUserIdChange?.(newUserId);
+                setValues(prev => ({
+                  ...prev,
+                  user_id: newUserId,
+                }));
+              }}
+              className="w-full border border-gray-300 rounded px-3 py-2 shadow-sm focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition bg-white"
+              disabled={readOnly || loadingUsers}
+              required
+            >
+              <option value="">Seleccione un usuario</option>
+              {users.map((u: any) => (
+                <option key={u.id} value={u.id}>{u.full_name || u.email}</option>
+              ))}
+            </select>
+          </div>
+        )}
+        {/* Fin campo Usuarios */}
         {/* Número de Factura y Usuario (ID) ocultos del formulario visual */}
         <div>
           <label className="block text-sm font-medium mb-1">Nombre de la Cuenta <span className="text-red-500">*</span></label>
