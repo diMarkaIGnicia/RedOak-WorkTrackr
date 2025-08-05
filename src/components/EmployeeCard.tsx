@@ -13,11 +13,10 @@ interface Task {
 interface EmployeeCardProps {
   nombre: string;
   photo_url?: string | null;
-  tareas: Task[];
   userId: string;
 }
 
-export const EmployeeCard: React.FC<EmployeeCardProps> = ({ nombre, photo_url, tareas, userId }) => {
+export const EmployeeCard: React.FC<EmployeeCardProps> = ({ nombre, photo_url, userId }) => {
   // Obtener facturas del usuario
   const { invoices, loading: loadingInvoices } = useInvoices(userId);
   // Obtener horas trabajadas libres (sin factura)

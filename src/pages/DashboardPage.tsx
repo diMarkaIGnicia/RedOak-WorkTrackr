@@ -219,7 +219,6 @@ const DashboardPage: React.FC = () => {
                   userId={emp.id}
                   nombre={emp.full_name}
                   photo_url={emp.photo_url}
-                  tareas={emp.tareas}
                 />
               ))}
             </div>
