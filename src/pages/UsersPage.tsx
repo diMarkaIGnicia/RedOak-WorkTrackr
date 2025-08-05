@@ -163,7 +163,7 @@ export default function UsersPage() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {users.map((user) => (
+                                {users.filter(user => user.id !== profile.id).map((user) => (
                                     <tr key={user.id}>
                                         <td className="px-6 py-4 whitespace-nowrap">{user.full_name}</td>
                                         <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
