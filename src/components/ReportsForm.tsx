@@ -7,6 +7,7 @@ import { useUserProfileContext } from '../context/UserProfileContext';
 
 
 export interface ReportsFormValues {
+  id: string;
   report_date: string;
   report_time: string;
   customer_id: string;
@@ -52,6 +53,7 @@ export const ReportsForm: React.FC<ReportsFormProps & { role: string }> = (props
   } = props;
 
   const [form, setForm] = React.useState<ReportsFormValues>(() => ({
+    id: safeInitialValues.current?.id || '',
     report_date: safeInitialValues.current?.report_date || '',
     report_time: safeInitialValues.current?.report_time || '',
     customer_id: safeInitialValues.current?.customer_id || '',

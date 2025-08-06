@@ -11,7 +11,7 @@ export interface Attachment {
 }
 
 interface AttachmentsProps {
-  reportId?: number;
+  reportId?: string;
   readOnly?: boolean;
 }
 

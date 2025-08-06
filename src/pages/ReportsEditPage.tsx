@@ -16,9 +16,10 @@ export default function ReportsEditPage() {
   const { profile, loading: loadingProfile } = useUserProfileContext();
   const { addReport, updateReport } = useReports(profile?.id);
 
-  // Si location.state tiene task, es edición; si no, es creación
-  const reportRef = React.useRef((location.state && (location.state as any).report) as (ReportsFormValues & { id?: string }) | undefined);
-  const report = reportRef.current;
+  // Usar estado local para el reporte (creación/edición)
+  const [report, setReport] = React.useState<ReportsFormValues & { id?: string } | undefined>(
+    (location.state && (location.state as any).report) as (ReportsFormValues & { id?: string }) | undefined
+  );
 
   const [initialObservations, setInitialObservations] = React.useState<any[]>([]);
   React.useEffect(() => {
@@ -95,16 +96,16 @@ export default function ReportsEditPage() {
         }
         reportId = reportResult.id;
         toast.success('Reporte creado correctamente');
+        // Actualizar el reporte localmente para evitar remount
+        setReport({ ...reportPayload, id: reportId });
+        navigate(`/reportes/editar/${reportId}`, { replace: true, state: { report: { ...reportPayload, id: reportId } } });
+
       }
       if (error) throw error;
 
       if (report && report.id) {
         // Si es update, navega a la lista
         navigate('/reportes');
-      } else {
-        // Si es insert, permanece en la página y recarga el estado con el nuevo reporte
-        toast.success('Reporte creado correctamente. Puedes continuar editando.');
-        navigate(`/reportes/editar/${reportId}`, { replace: true, state: { report: { ...reportPayload, id: reportId } } });
       }
     } catch (err: any) {
       const msg = err?.message || (typeof err === 'string' ? err : JSON.stringify(err));
